@@ -11,8 +11,10 @@ import GlobalDistributors from "@/pages/GlobalDistributors";
 import BusinessIntelligence from "@/pages/BusinessIntelligence";
 import BrandDetail from "@/pages/BrandDetail";
 import RouteManagement from "@/pages/RouteManagement";
+import FactorySetup from "@/pages/FactorySetup";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
+import { FruitfulAssistChatbot, FruitfulAssistFloatingButton } from "@/components/FruitfulAssistChatbot";
 import { useState } from "react";
 
 function Router() {
@@ -25,6 +27,7 @@ function Router() {
       <Route path="/distributors" component={GlobalDistributors} />
       <Route path="/analytics" component={BusinessIntelligence} />
       <Route path="/routes" component={RouteManagement} />
+      <Route path="/factory-setup" component={FactorySetup} />
       <Route path="/brands/:id" component={BrandDetail} />
     </Switch>
   );
@@ -32,6 +35,7 @@ function Router() {
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -45,6 +49,17 @@ function App() {
             </main>
           </div>
         </div>
+        
+        {/* Fruitful Assist Chatbot */}
+        <FruitfulAssistFloatingButton 
+          onClick={() => setChatbotOpen(true)} 
+          isOpen={chatbotOpen} 
+        />
+        <FruitfulAssistChatbot 
+          isOpen={chatbotOpen} 
+          onToggle={() => setChatbotOpen(!chatbotOpen)} 
+        />
+        
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
