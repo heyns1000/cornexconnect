@@ -309,6 +309,54 @@ export const factoryRecommendations = pgTable("factory_recommendations", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
+// Extended Automation Tables
+export const automationRules = pgTable("automation_rules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ruleName: varchar("rule_name").notNull(),
+  category: varchar("category").notNull(), // 'inventory', 'production', 'maintenance', 'quality', 'distribution'
+  triggerType: varchar("trigger_type").notNull(), // 'threshold', 'schedule', 'event', 'predictive'
+  triggerCondition: jsonb("trigger_condition").notNull(), // flexible condition data
+  actionType: varchar("action_type").notNull(), // 'reorder', 'schedule', 'alert', 'optimize', 'adjust'
+  actionParameters: jsonb("action_parameters").notNull(), // action configuration
+  isActive: boolean("is_active").default(true),
+  priority: integer("priority").default(2), // 1=high, 2=medium, 3=low
+  lastTriggered: timestamp("last_triggered"),
+  executionCount: integer("execution_count").default(0),
+  successRate: varchar("success_rate").default("0.00"), // percentage as string
+  createdBy: varchar("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const automationEvents = pgTable("automation_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ruleId: varchar("rule_id").notNull().references(() => automationRules.id),
+  eventType: varchar("event_type").notNull(), // 'triggered', 'executed', 'failed', 'completed'
+  status: varchar("status").notNull(), // 'success', 'failed', 'pending', 'cancelled'
+  triggerData: jsonb("trigger_data"), // data that triggered the rule
+  result: jsonb("result"), // execution result or error details
+  executionTime: integer("execution_time"), // milliseconds
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const maintenanceSchedules = pgTable("maintenance_schedules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  equipmentName: varchar("equipment_name").notNull(),
+  maintenanceType: varchar("maintenance_type").notNull(), // 'preventive', 'predictive', 'corrective'
+  factoryId: varchar("factory_id").references(() => factorySetups.id),
+  scheduledDate: timestamp("scheduled_date").notNull(),
+  estimatedDuration: integer("estimated_duration"), // minutes
+  priority: varchar("priority").notNull().default("medium"), // 'high', 'medium', 'low'
+  status: varchar("status").notNull().default("scheduled"), // 'scheduled', 'in_progress', 'completed', 'cancelled'
+  assignedTechnician: varchar("assigned_technician"),
+  checklist: jsonb("checklist"), // maintenance tasks
+  notes: text("notes"),
+  cost: varchar("cost").default("0.00"), // cost as string for precision
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
@@ -404,6 +452,18 @@ export const factoryRecommendationsRelations = relations(factoryRecommendations,
   factory: one(factorySetups, { fields: [factoryRecommendations.factoryId], references: [factorySetups.id] }),
 }));
 
+export const automationRulesRelations = relations(automationRules, ({ many }) => ({
+  events: many(automationEvents),
+}));
+
+export const automationEventsRelations = relations(automationEvents, ({ one }) => ({
+  rule: one(automationRules, { fields: [automationEvents.ruleId], references: [automationRules.id] }),
+}));
+
+export const maintenanceSchedulesRelations = relations(maintenanceSchedules, ({ one }) => ({
+  factory: one(factorySetups, { fields: [maintenanceSchedules.factoryId], references: [factorySetups.id] }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertProductSchema = createInsertSchema(products).omit({ id: true, createdAt: true });
@@ -470,4 +530,17 @@ export type InsertAiInsight = z.infer<typeof insertAiInsightSchema>;
 export type ProductionMetrics = typeof productionMetrics.$inferSelect;
 export type InsertProductionMetrics = z.infer<typeof insertProductionMetricsSchema>;
 export type FactoryRecommendation = typeof factoryRecommendations.$inferSelect;
+
+// Extended Automation Types
+export const insertAutomationRuleSchema = createInsertSchema(automationRules).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAutomationEventSchema = createInsertSchema(automationEvents).omit({ id: true, createdAt: true });
+export const insertMaintenanceScheduleSchema = createInsertSchema(maintenanceSchedules).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type InsertAutomationRule = z.infer<typeof insertAutomationRuleSchema>;
+export type InsertAutomationEvent = z.infer<typeof insertAutomationEventSchema>;
+export type InsertMaintenanceSchedule = z.infer<typeof insertMaintenanceScheduleSchema>;
+
+export type AutomationRule = typeof automationRules.$inferSelect;
+export type AutomationEvent = typeof automationEvents.$inferSelect;
+export type MaintenanceSchedule = typeof maintenanceSchedules.$inferSelect;
 export type InsertFactoryRecommendation = z.infer<typeof insertFactoryRecommendationSchema>;

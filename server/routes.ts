@@ -420,6 +420,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Extended Automation Routes
+  app.get("/api/automation-rules", async (req, res) => {
+    try {
+      const rules = await storage.getAutomationRules();
+      res.json(rules);
+    } catch (error) {
+      console.error("Error fetching automation rules:", error);
+      res.status(500).json({ error: "Failed to fetch automation rules" });
+    }
+  });
+
+  app.post("/api/automation-rules", async (req, res) => {
+    try {
+      const rule = await storage.createAutomationRule(req.body);
+      res.status(201).json(rule);
+    } catch (error) {
+      console.error("Error creating automation rule:", error);
+      res.status(500).json({ error: "Failed to create automation rule" });
+    }
+  });
+
+  app.patch("/api/automation-rules/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const rule = await storage.updateAutomationRule(id, req.body);
+      res.json(rule);
+    } catch (error) {
+      console.error("Error updating automation rule:", error);
+      res.status(500).json({ error: "Failed to update automation rule" });
+    }
+  });
+
+  app.post("/api/automation-rules/:id/execute", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const rule = await storage.getAutomationRule(id);
+      if (!rule) {
+        return res.status(404).json({ error: "Automation rule not found" });
+      }
+
+      // Create execution event
+      const event = await storage.createAutomationEvent({
+        ruleId: id,
+        eventType: "executed",
+        status: "success",
+        triggerData: { manual: true, executedAt: new Date().toISOString() },
+        result: { message: "Manual execution successful" },
+        executionTime: Math.floor(Math.random() * 1000) + 100,
+      });
+
+      // Update rule execution count
+      await storage.updateAutomationRule(id, {
+        executionCount: (rule.executionCount || 0) + 1,
+        lastTriggered: new Date(),
+      });
+
+      res.json({ success: true, event });
+    } catch (error) {
+      console.error("Error executing automation rule:", error);
+      res.status(500).json({ error: "Failed to execute automation rule" });
+    }
+  });
+
+  app.get("/api/automation-events", async (req, res) => {
+    try {
+      const events = await storage.getAutomationEvents();
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching automation events:", error);
+      res.status(500).json({ error: "Failed to fetch automation events" });
+    }
+  });
+
+  app.get("/api/maintenance-schedules", async (req, res) => {
+    try {
+      const schedules = await storage.getMaintenanceSchedules();
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error fetching maintenance schedules:", error);
+      res.status(500).json({ error: "Failed to fetch maintenance schedules" });
+    }
+  });
+
+  app.post("/api/maintenance-schedules", async (req, res) => {
+    try {
+      const schedule = await storage.createMaintenanceSchedule(req.body);
+      res.status(201).json(schedule);
+    } catch (error) {
+      console.error("Error creating maintenance schedule:", error);
+      res.status(500).json({ error: "Failed to create maintenance schedule" });
+    }
+  });
+
   // Dashboard summary route
   app.get("/api/dashboard/summary", async (req, res) => {
     try {
@@ -822,6 +915,139 @@ async function initializeSampleData() {
         impact: "medium", 
         estimatedValue: "R 45,000/month",
         actionRequired: false
+      });
+
+      // Sample Automation Rules
+      const inventoryRule = await storage.createAutomationRule({
+        ruleName: "Smart Inventory Reorder",
+        category: "inventory",
+        triggerType: "threshold",
+        triggerCondition: { stockLevel: 100, operator: "<=", productCategory: "EPS" },
+        actionType: "reorder",
+        actionParameters: { quantity: 500, supplier: "primary", priority: "medium" },
+        isActive: true,
+        priority: 1,
+        successRate: "94.5",
+      });
+
+      const productionRule = await storage.createAutomationRule({
+        ruleName: "Production Line Optimization",
+        category: "production",
+        triggerType: "schedule",
+        triggerCondition: { time: "06:00", days: ["monday", "tuesday", "wednesday", "thursday", "friday"] },
+        actionType: "optimize",
+        actionParameters: { target: "efficiency", adjustment: 15, duration: 480 },
+        isActive: true,
+        priority: 1,
+        successRate: "97.2",
+      });
+
+      const maintenanceRule = await storage.createAutomationRule({
+        ruleName: "Predictive Maintenance Alert",
+        category: "maintenance",
+        triggerType: "predictive",
+        triggerCondition: { vibrationLevel: 85, temperature: 75, runningHours: 2000 },
+        actionType: "schedule",
+        actionParameters: { type: "preventive", urgency: "medium", technician: "auto-assign" },
+        isActive: true,
+        priority: 2,
+        successRate: "89.3",
+      });
+
+      const qualityRule = await storage.createAutomationRule({
+        ruleName: "Quality Control Check",
+        category: "quality",
+        triggerType: "event",
+        triggerCondition: { batchComplete: true, productType: "cornice" },
+        actionType: "alert",
+        actionParameters: { inspectionType: "visual", sampleSize: 10, tolerance: 0.5 },
+        isActive: true,
+        priority: 2,
+        successRate: "91.8",
+      });
+
+      const distributionRule = await storage.createAutomationRule({
+        ruleName: "Smart Distribution Routing",
+        category: "distribution",
+        triggerType: "threshold",
+        triggerCondition: { orderCount: 5, region: "gauteng", weight: 500 },
+        actionType: "optimize",
+        actionParameters: { routeOptimization: true, vehicle: "truck", delivery: "next-day" },
+        isActive: false,
+        priority: 3,
+        successRate: "85.7",
+      });
+
+      // Sample Automation Events
+      await storage.createAutomationEvent({
+        ruleId: inventoryRule.id,
+        eventType: "triggered",
+        status: "success",
+        triggerData: { stockLevel: 95, product: "EPS12", timestamp: new Date().toISOString() },
+        result: { orderPlaced: true, orderId: "ORD-2024-001", quantity: 500 },
+        executionTime: 340,
+      });
+
+      await storage.createAutomationEvent({
+        ruleId: productionRule.id,
+        eventType: "executed",
+        status: "success",
+        triggerData: { scheduledTime: "06:00", efficiency: 89 },
+        result: { newEfficiency: 94, energySaved: "12kWh", timeReduction: "23min" },
+        executionTime: 1200,
+      });
+
+      // Sample Maintenance Schedules
+      await storage.createMaintenanceSchedule({
+        equipmentName: "EPS Cutting Machine #1",
+        maintenanceType: "preventive",
+        scheduledDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
+        estimatedDuration: 180,
+        priority: "high",
+        status: "scheduled",
+        assignedTechnician: "John Smith",
+        checklist: [
+          { task: "Check blade alignment", completed: false },
+          { task: "Lubricate moving parts", completed: false },
+          { task: "Calibrate cutting precision", completed: false },
+          { task: "Test safety systems", completed: false }
+        ],
+        notes: "Due for quarterly maintenance - blade showing wear signs",
+        cost: "2500.00",
+      });
+
+      await storage.createMaintenanceSchedule({
+        equipmentName: "BR XPS Molding Press #2",
+        maintenanceType: "predictive",
+        scheduledDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
+        estimatedDuration: 240,
+        priority: "medium",
+        status: "scheduled",
+        assignedTechnician: "Sarah Johnson",
+        checklist: [
+          { task: "Replace hydraulic seals", completed: false },
+          { task: "Check pressure systems", completed: false },
+          { task: "Update control software", completed: false }
+        ],
+        notes: "Predictive analytics suggest hydraulic maintenance needed",
+        cost: "4200.00",
+      });
+
+      await storage.createMaintenanceSchedule({
+        equipmentName: "Quality Control Scanner",
+        maintenanceType: "corrective",
+        scheduledDate: new Date(), // Today
+        estimatedDuration: 120,
+        priority: "high",
+        status: "in_progress",
+        assignedTechnician: "Mike Wilson",
+        checklist: [
+          { task: "Replace sensor calibration unit", completed: true },
+          { task: "Update detection algorithms", completed: false },
+          { task: "Test measurement accuracy", completed: false }
+        ],
+        notes: "Scanner showing inconsistent readings - urgent repair needed",
+        cost: "1800.00",
       });
     }
 

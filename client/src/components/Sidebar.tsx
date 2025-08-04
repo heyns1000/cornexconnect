@@ -9,7 +9,8 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
-  Route
+  Route,
+  Bot
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { name: "Inventory AI", href: "/inventory", icon: Warehouse },
     { name: "Global Distributors", href: "/distributors", icon: Users },
     { name: "Route Management", href: "/routes", icon: Route },
+    { name: "Factory Setup", href: "/factory-setup", icon: Factory },
+    { name: "Extended Automation", href: "/automation", icon: Settings },
     { name: "Business Intelligence", href: "/analytics", icon: TrendingUp },
   ];
 

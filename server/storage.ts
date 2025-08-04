@@ -3,6 +3,7 @@ import {
   productionSchedule, demandForecast, salesMetrics, brands,
   salesReps, hardwareStores, routePlans, routeStores, aiOrderSuggestions, storeVisits,
   factorySetups, aiInsights, productionMetrics, factoryRecommendations,
+  automationRules, automationEvents, maintenanceSchedules,
   type User, type InsertUser, type Product, type InsertProduct,
   type Inventory, type InsertInventory, type Distributor, type InsertDistributor,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
@@ -19,7 +20,10 @@ import {
   type FactorySetup, type InsertFactorySetup,
   type AiInsight, type InsertAiInsight,
   type ProductionMetrics, type InsertProductionMetrics,
-  type FactoryRecommendation, type InsertFactoryRecommendation
+  type FactoryRecommendation, type InsertFactoryRecommendation,
+  type AutomationRule, type InsertAutomationRule,
+  type AutomationEvent, type InsertAutomationEvent,
+  type MaintenanceSchedule, type InsertMaintenanceSchedule
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, and, gte, lte, ilike, or } from "drizzle-orm";
@@ -119,6 +123,18 @@ export interface IStorage {
   // Factory Recommendations
   getFactoryRecommendations(factoryId: string): Promise<FactoryRecommendation[]>;
   createFactoryRecommendation(recommendation: InsertFactoryRecommendation): Promise<FactoryRecommendation>;
+  
+  // Extended Automation
+  getAutomationRules(): Promise<AutomationRule[]>;
+  getAutomationRule(id: string): Promise<AutomationRule | undefined>;
+  createAutomationRule(rule: InsertAutomationRule): Promise<AutomationRule>;
+  updateAutomationRule(id: string, updates: Partial<AutomationRule>): Promise<AutomationRule>;
+  
+  getAutomationEvents(): Promise<AutomationEvent[]>;
+  createAutomationEvent(event: InsertAutomationEvent): Promise<AutomationEvent>;
+  
+  getMaintenanceSchedules(): Promise<MaintenanceSchedule[]>;
+  createMaintenanceSchedule(schedule: InsertMaintenanceSchedule): Promise<MaintenanceSchedule>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -589,6 +605,50 @@ export class DatabaseStorage implements IStorage {
   async createFactoryRecommendation(recommendation: InsertFactoryRecommendation): Promise<FactoryRecommendation> {
     const [newRecommendation] = await db.insert(factoryRecommendations).values(recommendation).returning();
     return newRecommendation;
+  }
+
+  // Extended Automation
+  async getAutomationRules(): Promise<AutomationRule[]> {
+    return await db.select().from(automationRules)
+      .orderBy(desc(automationRules.priority), desc(automationRules.createdAt));
+  }
+
+  async getAutomationRule(id: string): Promise<AutomationRule | undefined> {
+    const [rule] = await db.select().from(automationRules).where(eq(automationRules.id, id));
+    return rule || undefined;
+  }
+
+  async createAutomationRule(rule: InsertAutomationRule): Promise<AutomationRule> {
+    const [newRule] = await db.insert(automationRules).values(rule).returning();
+    return newRule;
+  }
+
+  async updateAutomationRule(id: string, updates: Partial<AutomationRule>): Promise<AutomationRule> {
+    const [updated] = await db.update(automationRules)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(automationRules.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getAutomationEvents(): Promise<AutomationEvent[]> {
+    return await db.select().from(automationEvents)
+      .orderBy(desc(automationEvents.createdAt));
+  }
+
+  async createAutomationEvent(event: InsertAutomationEvent): Promise<AutomationEvent> {
+    const [newEvent] = await db.insert(automationEvents).values(event).returning();
+    return newEvent;
+  }
+
+  async getMaintenanceSchedules(): Promise<MaintenanceSchedule[]> {
+    return await db.select().from(maintenanceSchedules)
+      .orderBy(asc(maintenanceSchedules.scheduledDate));
+  }
+
+  async createMaintenanceSchedule(schedule: InsertMaintenanceSchedule): Promise<MaintenanceSchedule> {
+    const [newSchedule] = await db.insert(maintenanceSchedules).values(schedule).returning();
+    return newSchedule;
   }
 }
 
