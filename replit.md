@@ -43,6 +43,11 @@ Preferred communication style: Simple, everyday language.
 - **Orders**: Comprehensive order lifecycle management with item-level tracking
 - **Production**: Scheduling and capacity planning with AI-driven optimization
 - **Analytics**: Sales metrics, demand forecasting, and business intelligence
+- **Sales Representatives**: Employee management with territory assignments and performance tracking
+- **Hardware Stores**: 8500+ store database with geographic, size, and credit information
+- **Route Plans**: Sales rep route optimization with visit scheduling and frequency management
+- **AI Order Suggestions**: Machine learning-powered smart ordering recommendations
+- **Store Visits**: Visit tracking with performance metrics and follow-up management
 
 ### AI and Machine Learning Features
 - **Demand Forecasting**: SKU-level predictions using Random Forest and LSTM models

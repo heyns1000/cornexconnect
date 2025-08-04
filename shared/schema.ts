@@ -141,6 +141,111 @@ export const brands = pgTable("brands", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Sales Representatives
+export const salesReps = pgTable("sales_reps", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  empId: text("emp_id").notNull().unique(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  territory: text("territory").notNull(),
+  region: text("region").notNull(),
+  province: text("province").notNull(),
+  targetSales: decimal("target_sales", { precision: 12, scale: 2 }).default("0.00"),
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).default("0.00"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Hardware Stores (8500+ stores)
+export const hardwareStores = pgTable("hardware_stores", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  storeCode: text("store_code").notNull().unique(),
+  storeName: text("store_name").notNull(),
+  ownerName: text("owner_name"),
+  contactPerson: text("contact_person"),
+  phone: text("phone"),
+  email: text("email"),
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  province: text("province").notNull(),
+  postalCode: text("postal_code"),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  storeSize: text("store_size").default("medium"), // small, medium, large, mega
+  storeType: text("store_type").notNull(), // independent, chain, franchise
+  creditRating: text("credit_rating").default("B"), // A+, A, B+, B, C+, C, D
+  monthlyPotential: decimal("monthly_potential", { precision: 10, scale: 2 }).default("0.00"),
+  lastOrderDate: timestamp("last_order_date"),
+  lastVisitDate: timestamp("last_visit_date"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Route Plans (from Excel sheets)
+export const routePlans = pgTable("route_plans", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  routeCode: text("route_code").notNull().unique(),
+  routeName: text("route_name").notNull(),
+  salesRepId: varchar("sales_rep_id").notNull().references(() => salesReps.id),
+  province: text("province").notNull(),
+  region: text("region").notNull(),
+  visitFrequency: text("visit_frequency").notNull(), // weekly, biweekly, monthly
+  totalStores: integer("total_stores").notNull().default(0),
+  estimatedDuration: integer("estimated_duration"), // in hours
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Route Store Assignments
+export const routeStores = pgTable("route_stores", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  routePlanId: varchar("route_plan_id").notNull().references(() => routePlans.id),
+  hardwareStoreId: varchar("hardware_store_id").notNull().references(() => hardwareStores.id),
+  visitOrder: integer("visit_order"), // sequence in route
+  preferredVisitDay: text("preferred_visit_day"), // monday, tuesday, etc
+  estimatedDuration: integer("estimated_duration"), // minutes per visit
+  lastVisitDate: timestamp("last_visit_date"),
+  nextScheduledVisit: timestamp("next_scheduled_visit"),
+  visitNotes: text("visit_notes"),
+});
+
+// AI Suggestions for Smart Ordering
+export const aiOrderSuggestions = pgTable("ai_order_suggestions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  hardwareStoreId: varchar("hardware_store_id").notNull().references(() => hardwareStores.id),
+  productId: varchar("product_id").notNull().references(() => products.id),
+  suggestedQuantity: integer("suggested_quantity").notNull(),
+  suggestedValue: decimal("suggested_value", { precision: 10, scale: 2 }).notNull(),
+  confidence: decimal("confidence", { precision: 5, scale: 2 }).notNull(),
+  reasoning: text("reasoning"), // AI explanation for the suggestion
+  seasonalFactor: decimal("seasonal_factor", { precision: 5, scale: 2 }),
+  urgencyLevel: text("urgency_level").default("normal"), // urgent, high, normal, low
+  validUntil: timestamp("valid_until").notNull(),
+  status: text("status").default("pending"), // pending, accepted, rejected, expired
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Store Visit Reports
+export const storeVisits = pgTable("store_visits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  hardwareStoreId: varchar("hardware_store_id").notNull().references(() => hardwareStores.id),
+  salesRepId: varchar("sales_rep_id").notNull().references(() => salesReps.id),
+  visitDate: timestamp("visit_date").notNull(),
+  visitType: text("visit_type").notNull(), // scheduled, unscheduled, follow_up
+  visitDuration: integer("visit_duration"), // minutes
+  ordersPlaced: integer("orders_placed").default(0),
+  orderValue: decimal("order_value", { precision: 10, scale: 2 }).default("0.00"),
+  storeCondition: text("store_condition"), // excellent, good, fair, poor
+  stockLevel: text("stock_level"), // overstocked, well_stocked, low_stock, out_of_stock
+  competitorActivity: text("competitor_activity"),
+  notes: text("notes"),
+  followUpRequired: boolean("follow_up_required").default(false),
+  followUpDate: timestamp("follow_up_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
@@ -186,6 +291,37 @@ export const salesMetricsRelations = relations(salesMetrics, ({ one }) => ({
   distributor: one(distributors, { fields: [salesMetrics.distributorId], references: [distributors.id] }),
 }));
 
+export const salesRepsRelations = relations(salesReps, ({ many }) => ({
+  routePlans: many(routePlans),
+  storeVisits: many(storeVisits),
+}));
+
+export const hardwareStoresRelations = relations(hardwareStores, ({ many }) => ({
+  routeStores: many(routeStores),
+  aiOrderSuggestions: many(aiOrderSuggestions),
+  storeVisits: many(storeVisits),
+}));
+
+export const routePlansRelations = relations(routePlans, ({ one, many }) => ({
+  salesRep: one(salesReps, { fields: [routePlans.salesRepId], references: [salesReps.id] }),
+  routeStores: many(routeStores),
+}));
+
+export const routeStoresRelations = relations(routeStores, ({ one }) => ({
+  routePlan: one(routePlans, { fields: [routeStores.routePlanId], references: [routePlans.id] }),
+  hardwareStore: one(hardwareStores, { fields: [routeStores.hardwareStoreId], references: [hardwareStores.id] }),
+}));
+
+export const aiOrderSuggestionsRelations = relations(aiOrderSuggestions, ({ one }) => ({
+  hardwareStore: one(hardwareStores, { fields: [aiOrderSuggestions.hardwareStoreId], references: [hardwareStores.id] }),
+  product: one(products, { fields: [aiOrderSuggestions.productId], references: [products.id] }),
+}));
+
+export const storeVisitsRelations = relations(storeVisits, ({ one }) => ({
+  hardwareStore: one(hardwareStores, { fields: [storeVisits.hardwareStoreId], references: [hardwareStores.id] }),
+  salesRep: one(salesReps, { fields: [storeVisits.salesRepId], references: [salesReps.id] }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertProductSchema = createInsertSchema(products).omit({ id: true, createdAt: true });
@@ -197,6 +333,12 @@ export const insertProductionScheduleSchema = createInsertSchema(productionSched
 export const insertDemandForecastSchema = createInsertSchema(demandForecast).omit({ id: true, createdAt: true });
 export const insertSalesMetricsSchema = createInsertSchema(salesMetrics).omit({ id: true });
 export const insertBrandSchema = createInsertSchema(brands).omit({ id: true, createdAt: true });
+export const insertSalesRepSchema = createInsertSchema(salesReps).omit({ id: true, createdAt: true });
+export const insertHardwareStoreSchema = createInsertSchema(hardwareStores).omit({ id: true, createdAt: true });
+export const insertRoutePlanSchema = createInsertSchema(routePlans).omit({ id: true, createdAt: true });
+export const insertRouteStoreSchema = createInsertSchema(routeStores).omit({ id: true });
+export const insertAiOrderSuggestionSchema = createInsertSchema(aiOrderSuggestions).omit({ id: true, createdAt: true });
+export const insertStoreVisitSchema = createInsertSchema(storeVisits).omit({ id: true, createdAt: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -219,3 +361,15 @@ export type SalesMetrics = typeof salesMetrics.$inferSelect;
 export type InsertSalesMetrics = z.infer<typeof insertSalesMetricsSchema>;
 export type Brand = typeof brands.$inferSelect;
 export type InsertBrand = z.infer<typeof insertBrandSchema>;
+export type SalesRep = typeof salesReps.$inferSelect;
+export type InsertSalesRep = z.infer<typeof insertSalesRepSchema>;
+export type HardwareStore = typeof hardwareStores.$inferSelect;
+export type InsertHardwareStore = z.infer<typeof insertHardwareStoreSchema>;
+export type RoutePlan = typeof routePlans.$inferSelect;
+export type InsertRoutePlan = z.infer<typeof insertRoutePlanSchema>;
+export type RouteStore = typeof routeStores.$inferSelect;
+export type InsertRouteStore = z.infer<typeof insertRouteStoreSchema>;
+export type AiOrderSuggestion = typeof aiOrderSuggestions.$inferSelect;
+export type InsertAiOrderSuggestion = z.infer<typeof insertAiOrderSuggestionSchema>;
+export type StoreVisit = typeof storeVisits.$inferSelect;
+export type InsertStoreVisit = z.infer<typeof insertStoreVisitSchema>;

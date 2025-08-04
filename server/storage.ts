@@ -1,13 +1,20 @@
 import { 
   users, products, inventory, distributors, orders, orderItems, 
   productionSchedule, demandForecast, salesMetrics, brands,
+  salesReps, hardwareStores, routePlans, routeStores, aiOrderSuggestions, storeVisits,
   type User, type InsertUser, type Product, type InsertProduct,
   type Inventory, type InsertInventory, type Distributor, type InsertDistributor,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
   type ProductionSchedule, type InsertProductionSchedule,
   type DemandForecast, type InsertDemandForecast,
   type SalesMetrics, type InsertSalesMetrics,
-  type Brand, type InsertBrand
+  type Brand, type InsertBrand,
+  type SalesRep, type InsertSalesRep,
+  type HardwareStore, type InsertHardwareStore,
+  type RoutePlan, type InsertRoutePlan,
+  type RouteStore, type InsertRouteStore,
+  type AiOrderSuggestion, type InsertAiOrderSuggestion,
+  type StoreVisit, type InsertStoreVisit
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, and, gte, lte, ilike, or } from "drizzle-orm";
@@ -65,6 +72,30 @@ export interface IStorage {
   // Brands
   getBrands(): Promise<Brand[]>;
   createBrand(brand: InsertBrand): Promise<Brand>;
+  
+  // Sales Reps
+  getSalesReps(): Promise<SalesRep[]>;
+  getSalesRep(id: string): Promise<SalesRep | undefined>;
+  createSalesRep(rep: InsertSalesRep): Promise<SalesRep>;
+  
+  // Hardware Stores
+  getHardwareStores(): Promise<HardwareStore[]>;
+  getHardwareStore(id: string): Promise<HardwareStore | undefined>;
+  createHardwareStore(store: InsertHardwareStore): Promise<HardwareStore>;
+  getHardwareStoresByProvince(province: string): Promise<HardwareStore[]>;
+  
+  // Route Plans
+  getRoutePlans(): Promise<(RoutePlan & { salesRep: SalesRep })[]>;
+  getRoutePlan(id: string): Promise<(RoutePlan & { salesRep: SalesRep; routeStores: (RouteStore & { hardwareStore: HardwareStore })[] }) | undefined>;
+  createRoutePlan(route: InsertRoutePlan): Promise<RoutePlan>;
+  
+  // AI Order Suggestions
+  getAiOrderSuggestions(): Promise<(AiOrderSuggestion & { hardwareStore: HardwareStore; product: Product })[]>;
+  createAiOrderSuggestion(suggestion: InsertAiOrderSuggestion): Promise<AiOrderSuggestion>;
+  
+  // Store Visits
+  getStoreVisits(): Promise<(StoreVisit & { hardwareStore: HardwareStore; salesRep: SalesRep })[]>;
+  createStoreVisit(visit: InsertStoreVisit): Promise<StoreVisit>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -139,10 +170,15 @@ export class DatabaseStorage implements IStorage {
 
   // Inventory
   async getInventory(): Promise<(Inventory & { product: Product })[]> {
-    return await db.select()
+    const result = await db.select()
       .from(inventory)
       .innerJoin(products, eq(inventory.productId, products.id))
       .where(eq(products.isActive, true));
+    
+    return result.map(row => ({
+      ...row.inventory,
+      product: row.products
+    }));
   }
 
   async getInventoryByProduct(productId: string): Promise<Inventory | undefined> {
@@ -184,10 +220,15 @@ export class DatabaseStorage implements IStorage {
 
   // Orders
   async getOrders(): Promise<(Order & { distributor: Distributor })[]> {
-    return await db.select()
+    const result = await db.select()
       .from(orders)
       .innerJoin(distributors, eq(orders.distributorId, distributors.id))
       .orderBy(desc(orders.createdAt));
+    
+    return result.map(row => ({
+      ...row.orders,
+      distributor: row.distributors
+    }));
   }
 
   async getOrder(id: string): Promise<(Order & { distributor: Distributor; items: (OrderItem & { product: Product })[] }) | undefined> {
@@ -206,7 +247,10 @@ export class DatabaseStorage implements IStorage {
     return {
       ...order.orders,
       distributor: order.distributors,
-      items
+      items: items.map(item => ({
+        ...item.order_items,
+        product: item.products
+      }))
     };
   }
 
@@ -226,10 +270,15 @@ export class DatabaseStorage implements IStorage {
 
   // Production Schedule
   async getProductionSchedule(): Promise<(ProductionSchedule & { product: Product })[]> {
-    return await db.select()
+    const result = await db.select()
       .from(productionSchedule)
       .innerJoin(products, eq(productionSchedule.productId, products.id))
       .orderBy(asc(productionSchedule.scheduledDate));
+    
+    return result.map(row => ({
+      ...row.production_schedule,
+      product: row.products
+    }));
   }
 
   async createProductionSchedule(schedule: InsertProductionSchedule): Promise<ProductionSchedule> {
@@ -243,7 +292,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProductionScheduleByDate(startDate: Date, endDate: Date): Promise<(ProductionSchedule & { product: Product })[]> {
-    return await db.select()
+    const result = await db.select()
       .from(productionSchedule)
       .innerJoin(products, eq(productionSchedule.productId, products.id))
       .where(
@@ -253,6 +302,11 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(asc(productionSchedule.scheduledDate));
+    
+    return result.map(row => ({
+      ...row.production_schedule,
+      product: row.products
+    }));
   }
 
   // Demand Forecast
@@ -269,7 +323,12 @@ export class DatabaseStorage implements IStorage {
       query = query.where(and(...conditions));
     }
 
-    return await query.orderBy(desc(demandForecast.forecastDate));
+    const result = await query.orderBy(desc(demandForecast.forecastDate));
+    
+    return result.map(row => ({
+      ...row.demand_forecast,
+      product: row.products
+    }));
   }
 
   async createDemandForecast(forecast: InsertDemandForecast): Promise<DemandForecast> {
@@ -329,6 +388,123 @@ export class DatabaseStorage implements IStorage {
   async createBrand(brand: InsertBrand): Promise<Brand> {
     const [newBrand] = await db.insert(brands).values(brand).returning();
     return newBrand;
+  }
+
+  // Sales Reps
+  async getSalesReps(): Promise<SalesRep[]> {
+    return await db.select().from(salesReps).where(eq(salesReps.isActive, true)).orderBy(asc(salesReps.firstName));
+  }
+
+  async getSalesRep(id: string): Promise<SalesRep | undefined> {
+    const [rep] = await db.select().from(salesReps).where(eq(salesReps.id, id));
+    return rep || undefined;
+  }
+
+  async createSalesRep(rep: InsertSalesRep): Promise<SalesRep> {
+    const [newRep] = await db.insert(salesReps).values(rep).returning();
+    return newRep;
+  }
+
+  // Hardware Stores
+  async getHardwareStores(): Promise<HardwareStore[]> {
+    return await db.select().from(hardwareStores).where(eq(hardwareStores.isActive, true)).orderBy(asc(hardwareStores.storeName));
+  }
+
+  async getHardwareStore(id: string): Promise<HardwareStore | undefined> {
+    const [store] = await db.select().from(hardwareStores).where(eq(hardwareStores.id, id));
+    return store || undefined;
+  }
+
+  async createHardwareStore(store: InsertHardwareStore): Promise<HardwareStore> {
+    const [newStore] = await db.insert(hardwareStores).values(store).returning();
+    return newStore;
+  }
+
+  async getHardwareStoresByProvince(province: string): Promise<HardwareStore[]> {
+    return await db.select().from(hardwareStores)
+      .where(and(eq(hardwareStores.province, province), eq(hardwareStores.isActive, true)))
+      .orderBy(asc(hardwareStores.storeName));
+  }
+
+  // Route Plans
+  async getRoutePlans(): Promise<(RoutePlan & { salesRep: SalesRep })[]> {
+    const result = await db.select()
+      .from(routePlans)
+      .innerJoin(salesReps, eq(routePlans.salesRepId, salesReps.id))
+      .where(eq(routePlans.isActive, true))
+      .orderBy(asc(routePlans.routeName));
+    
+    return result.map(row => ({
+      ...row.route_plans,
+      salesRep: row.sales_reps
+    }));
+  }
+
+  async getRoutePlan(id: string): Promise<(RoutePlan & { salesRep: SalesRep; routeStores: (RouteStore & { hardwareStore: HardwareStore })[] }) | undefined> {
+    const [route] = await db.select()
+      .from(routePlans)
+      .innerJoin(salesReps, eq(routePlans.salesRepId, salesReps.id))
+      .where(eq(routePlans.id, id));
+    
+    if (!route) return undefined;
+
+    const stores = await db.select()
+      .from(routeStores)
+      .innerJoin(hardwareStores, eq(routeStores.hardwareStoreId, hardwareStores.id))
+      .where(eq(routeStores.routePlanId, id))
+      .orderBy(asc(routeStores.visitOrder));
+
+    return {
+      ...route.route_plans,
+      salesRep: route.sales_reps,
+      routeStores: stores.map(s => ({ ...s.route_stores, hardwareStore: s.hardware_stores }))
+    };
+  }
+
+  async createRoutePlan(route: InsertRoutePlan): Promise<RoutePlan> {
+    const [newRoute] = await db.insert(routePlans).values(route).returning();
+    return newRoute;
+  }
+
+  // AI Order Suggestions
+  async getAiOrderSuggestions(): Promise<(AiOrderSuggestion & { hardwareStore: HardwareStore; product: Product })[]> {
+    const result = await db.select()
+      .from(aiOrderSuggestions)
+      .innerJoin(hardwareStores, eq(aiOrderSuggestions.hardwareStoreId, hardwareStores.id))
+      .innerJoin(products, eq(aiOrderSuggestions.productId, products.id))
+      .where(eq(aiOrderSuggestions.status, 'pending'))
+      .orderBy(desc(aiOrderSuggestions.confidence));
+    
+    return result.map(row => ({
+      ...row.ai_order_suggestions,
+      hardwareStore: row.hardware_stores,
+      product: row.products
+    }));
+  }
+
+  async createAiOrderSuggestion(suggestion: InsertAiOrderSuggestion): Promise<AiOrderSuggestion> {
+    const [newSuggestion] = await db.insert(aiOrderSuggestions).values(suggestion).returning();
+    return newSuggestion;
+  }
+
+  // Store Visits
+  async getStoreVisits(): Promise<(StoreVisit & { hardwareStore: HardwareStore; salesRep: SalesRep })[]> {
+    const result = await db.select()
+      .from(storeVisits)
+      .innerJoin(hardwareStores, eq(storeVisits.hardwareStoreId, hardwareStores.id))
+      .innerJoin(salesReps, eq(storeVisits.salesRepId, salesReps.id))
+      .orderBy(desc(storeVisits.visitDate));
+    
+    return result.map(row => ({
+      ...row.store_visits,
+      hardwareStore: row.hardware_stores,
+      salesRep: row.sales_reps
+    }));
+  }
+
+  async createStoreVisit(visit: InsertStoreVisit): Promise<StoreVisit> {
+    const [newVisit] = await db.insert(storeVisits).values(visit).returning();
+    return newVisit;
   }
 }
 

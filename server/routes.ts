@@ -241,6 +241,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Route Management routes
+  app.get("/api/routes", async (req, res) => {
+    try {
+      const routes = await storage.getRoutePlans();
+      res.json(routes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch routes" });
+    }
+  });
+
+  app.get("/api/sales-reps", async (req, res) => {
+    try {
+      const reps = await storage.getSalesReps();
+      res.json(reps);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch sales reps" });
+    }
+  });
+
+  app.get("/api/hardware-stores", async (req, res) => {
+    try {
+      const province = req.query.province as string;
+      let stores;
+      if (province) {
+        stores = await storage.getHardwareStoresByProvince(province);
+      } else {
+        stores = await storage.getHardwareStores();
+      }
+      res.json(stores);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch hardware stores" });
+    }
+  });
+
+  app.get("/api/ai-suggestions", async (req, res) => {
+    try {
+      const suggestions = await storage.getAiOrderSuggestions();
+      res.json(suggestions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch AI suggestions" });
+    }
+  });
+
+  app.get("/api/store-visits", async (req, res) => {
+    try {
+      const visits = await storage.getStoreVisits();
+      res.json(visits);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch store visits" });
+    }
+  });
+
   // Dashboard summary route
   app.get("/api/dashboard/summary", async (req, res) => {
     try {

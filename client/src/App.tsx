@@ -10,6 +10,7 @@ import InventoryAI from "@/pages/InventoryAI";
 import GlobalDistributors from "@/pages/GlobalDistributors";
 import BusinessIntelligence from "@/pages/BusinessIntelligence";
 import BrandDetail from "@/pages/BrandDetail";
+import RouteManagement from "@/pages/RouteManagement";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import { useState } from "react";
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/inventory" component={InventoryAI} />
       <Route path="/distributors" component={GlobalDistributors} />
       <Route path="/analytics" component={BusinessIntelligence} />
+      <Route path="/routes" component={RouteManagement} />
       <Route path="/brands/:id" component={BrandDetail} />
     </Switch>
   );
