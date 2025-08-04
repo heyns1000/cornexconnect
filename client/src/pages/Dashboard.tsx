@@ -6,8 +6,11 @@ import ProductionSchedule from "@/components/ProductionSchedule";
 import DistributorMap from "@/components/DistributorMap";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useSimulatedMetrics } from "@/hooks/useRealTimeData";
 import { formatCurrency } from "@/lib/currency";
+import { CORNEX_BRANDS } from "@/lib/constants";
+import { Link } from "wouter";
 
 export default function Dashboard() {
   const metrics = useSimulatedMetrics();
@@ -118,7 +121,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {topProducts?.slice(0, 5).map((item: any) => (
+              {(topProducts && Array.isArray(topProducts) ? topProducts.slice(0, 5) : []).map((item: any) => (
                 <div key={item.product.id} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -179,6 +182,59 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Cornex Brand Portfolio Showcase */}
+      <Card className="dashboard-card border-2 border-cornex-blue/20 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl text-cornex-blue mb-2">🎨 Cornex™ Brand Portfolio</CardTitle>
+              <p className="text-gray-600">FAA.Zone Sovereign Scrolls • VaultMesh Memory Certified • TreatyMesh Housing Compliance</p>
+            </div>
+            <Badge variant="outline" className="bg-white border-cornex-blue text-cornex-blue px-3 py-1">
+              4 Active Brands
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {CORNEX_BRANDS.map((brand, index) => (
+              <Link key={brand.id} href={`/brands/${brand.id}`}>
+                <div 
+                  className="group cursor-pointer brand-card-hover glow-on-hover"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <Card className="border-2 hover:border-gray-300 bg-white/90 backdrop-blur-sm shadow-lg">
+                    <CardContent className="p-6 text-center">
+                      <div className="flex items-center justify-center mb-4">
+                        <div 
+                          className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold shadow-xl floating-animation"
+                          style={{ 
+                            backgroundColor: brand.color,
+                            boxShadow: `0 8px 32px ${brand.color}40`
+                          }}
+                        >
+                          <span className="text-xl">{brand.icon}</span>
+                        </div>
+                      </div>
+                      <h3 className="font-bold text-lg text-gray-900 mb-2 gradient-text">{brand.displayName}</h3>
+                      <p className="text-sm text-gray-600 mb-4 leading-relaxed">{brand.description}</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full group-hover:bg-gray-50 transition-all duration-300 font-semibold"
+                        style={{ borderColor: brand.color, color: brand.color }}
+                      >
+                        Explore Brand →
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* AI Insights Panel */}
       <Card className="cornex-gradient text-white">

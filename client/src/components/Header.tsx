@@ -21,12 +21,16 @@ export default function Header() {
         <div className="flex items-center justify-between">
           {/* Logo & Brand */}
           <div className="flex items-center space-x-4">
-            <div className="w-10 h-10 bg-cornex-blue rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">C</span>
+            <div className="w-12 h-12 bg-gradient-to-br from-cornex-blue to-cornex-dark rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-xl">C</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-cornex-blue">Cornex™ Global Platform</h1>
-              <p className="text-xs text-gray-500">AI-Powered Manufacturing Excellence</p>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-cornex-blue to-cornex-dark bg-clip-text text-transparent">
+                Cornex™ Global Platform
+              </h1>
+              <p className="text-xs text-gray-500 font-medium">
+                AI-Powered Manufacturing Excellence • FAA.Zone Sovereign Scrolls
+              </p>
             </div>
           </div>
           

@@ -9,6 +9,7 @@ import ProductionPlanning from "@/pages/ProductionPlanning";
 import InventoryAI from "@/pages/InventoryAI";
 import GlobalDistributors from "@/pages/GlobalDistributors";
 import BusinessIntelligence from "@/pages/BusinessIntelligence";
+import BrandDetail from "@/pages/BrandDetail";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import { useState } from "react";
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/inventory" component={InventoryAI} />
       <Route path="/distributors" component={GlobalDistributors} />
       <Route path="/analytics" component={BusinessIntelligence} />
+      <Route path="/brands/:id" component={BrandDetail} />
     </Switch>
   );
 }
@@ -32,7 +34,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="flex h-screen bg-gray-50">
+        <div className="flex h-screen animated-background cornex-pattern">
           <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
           <div className="flex-1 flex flex-col overflow-hidden">
             <Header />
