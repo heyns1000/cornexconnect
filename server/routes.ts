@@ -1,7 +1,16 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertProductSchema, insertDistributorSchema, insertOrderSchema, insertProductionScheduleSchema } from "@shared/schema";
+import { 
+  insertProductSchema, 
+  insertDistributorSchema, 
+  insertOrderSchema, 
+  insertProductionScheduleSchema,
+  insertFactorySetupSchema,
+  insertAiInsightSchema,
+  insertProductionMetricsSchema,
+  insertFactoryRecommendationSchema
+} from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -290,6 +299,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(visits);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch store visits" });
+    }
+  });
+
+  // Factory Setup Routes
+  app.get("/api/factory-setups", async (req, res) => {
+    try {
+      const factories = await storage.getFactorySetups();
+      res.json(factories);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch factory setups" });
+    }
+  });
+
+  app.get("/api/factory-setups/:id", async (req, res) => {
+    try {
+      const factory = await storage.getFactorySetup(req.params.id);
+      if (!factory) {
+        return res.status(404).json({ message: "Factory setup not found" });
+      }
+      res.json(factory);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch factory setup" });
+    }
+  });
+
+  app.post("/api/factory-setups", async (req, res) => {
+    try {
+      const validatedData = insertFactorySetupSchema.parse(req.body);
+      const factory = await storage.createFactorySetup(validatedData);
+      res.status(201).json(factory);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create factory setup" });
+    }
+  });
+
+  app.put("/api/factory-setups/:id", async (req, res) => {
+    try {
+      const factory = await storage.updateFactorySetup(req.params.id, req.body);
+      res.json(factory);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update factory setup" });
+    }
+  });
+
+  // AI Insights Routes
+  app.get("/api/ai-insights", async (req, res) => {
+    try {
+      const factoryId = req.query.factoryId as string;
+      const insights = await storage.getAiInsights(factoryId);
+      res.json(insights);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch AI insights" });
+    }
+  });
+
+  app.post("/api/ai-insights", async (req, res) => {
+    try {
+      const validatedData = insertAiInsightSchema.parse(req.body);
+      const insight = await storage.createAiInsight(validatedData);
+      res.status(201).json(insight);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create AI insight" });
+    }
+  });
+
+  // Production Metrics Routes
+  app.get("/api/production-metrics", async (req, res) => {
+    try {
+      const factoryId = req.query.factoryId as string;
+      if (!factoryId) {
+        return res.status(400).json({ message: "Factory ID is required" });
+      }
+      const metrics = await storage.getProductionMetrics(factoryId);
+      res.json(metrics);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch production metrics" });
+    }
+  });
+
+  app.post("/api/production-metrics", async (req, res) => {
+    try {
+      const validatedData = insertProductionMetricsSchema.parse(req.body);
+      const metrics = await storage.createProductionMetrics(validatedData);
+      res.status(201).json(metrics);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create production metrics" });
+    }
+  });
+
+  // Factory Recommendations Routes
+  app.get("/api/factory-recommendations/:factoryId", async (req, res) => {
+    try {
+      const recommendations = await storage.getFactoryRecommendations(req.params.factoryId);
+      res.json(recommendations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch factory recommendations" });
+    }
+  });
+
+  app.post("/api/factory-recommendations", async (req, res) => {
+    try {
+      const validatedData = insertFactoryRecommendationSchema.parse(req.body);
+      const recommendation = await storage.createFactoryRecommendation(validatedData);
+      res.status(201).json(recommendation);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create factory recommendation" });
     }
   });
 
@@ -629,6 +756,73 @@ async function initializeSampleData() {
           });
         }
       }
+    }
+
+    // Sample factory setups
+    const existingFactories = await storage.getFactorySetups();
+    if (existingFactories.length === 0) {
+      await storage.createFactorySetup({
+        factoryName: "Cornex Cape Town Production Hub",
+        location: "Cape Town, Western Cape",
+        ownershipPhase: "installation",
+        progressPercentage: 65,
+        totalInvestment: "2850000",
+        currentPayment: 2,
+        totalPayments: 3,
+        monthlyRevenue: "485000",
+        productionCapacity: 15000,
+        aiOptimizationLevel: 87,
+        connectedStores: 185,
+        targetStores: 300,
+        isActive: true
+      });
+
+      await storage.createFactorySetup({
+        factoryName: "Cornex Johannesburg Manufacturing",
+        location: "Johannesburg, Gauteng",
+        ownershipPhase: "operational",
+        progressPercentage: 100,
+        totalInvestment: "3200000",
+        currentPayment: 3,
+        totalPayments: 3,
+        monthlyRevenue: "625000",
+        productionCapacity: 20000,
+        aiOptimizationLevel: 94,
+        connectedStores: 420,
+        targetStores: 500,
+        isActive: true
+      });
+
+      // Sample AI insights
+      await storage.createAiInsight({
+        factoryId: null, // Global insight
+        type: "optimization",
+        title: "Production Line Optimization Opportunity",
+        description: "AI detected 18% efficiency gain possible by adjusting cutting speeds during peak hours",
+        impact: "high",
+        estimatedValue: "R 125,000/month",
+        actionRequired: true
+      });
+
+      await storage.createAiInsight({
+        factoryId: null,
+        type: "market",
+        title: "Market Expansion Recommendation", 
+        description: "Northern Cape region shows 340% demand growth potential for EPS products",
+        impact: "high",
+        estimatedValue: "R 850,000/year",
+        actionRequired: true
+      });
+
+      await storage.createAiInsight({
+        factoryId: null,
+        type: "cost_reduction",
+        title: "Energy Cost Optimization",
+        description: "Switch to renewable energy could reduce operational costs by 28%",
+        impact: "medium", 
+        estimatedValue: "R 45,000/month",
+        actionRequired: false
+      });
     }
 
     console.log("Sample data initialized successfully");

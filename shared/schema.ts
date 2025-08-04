@@ -246,6 +246,69 @@ export const storeVisits = pgTable("store_visits", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Factory Setup and Ownership Management
+export const factorySetups = pgTable("factory_setups", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  factoryName: varchar("factory_name").notNull(),
+  location: varchar("location").notNull(),
+  ownershipPhase: varchar("ownership_phase").notNull().default("planning"), // 'planning', 'setup', 'installation', 'testing', 'operational', 'owned'
+  progressPercentage: integer("progress_percentage").default(0),
+  totalInvestment: varchar("total_investment").notNull(),
+  currentPayment: integer("current_payment").default(0),
+  totalPayments: integer("total_payments").default(3),
+  monthlyRevenue: varchar("monthly_revenue").default("0"),
+  productionCapacity: integer("production_capacity").default(0), // units per month
+  aiOptimizationLevel: integer("ai_optimization_level").default(0), // percentage
+  connectedStores: integer("connected_stores").default(0),
+  targetStores: integer("target_stores").default(300),
+  setupDate: timestamp("setup_date").defaultNow(),
+  completionDate: timestamp("completion_date"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const aiInsights = pgTable("ai_insights", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  factoryId: varchar("factory_id").references(() => factorySetups.id),
+  type: varchar("type").notNull(), // 'optimization', 'market', 'expansion', 'cost_reduction'
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  impact: varchar("impact").notNull(), // 'high', 'medium', 'low'
+  estimatedValue: varchar("estimated_value").notNull(),
+  actionRequired: boolean("action_required").default(false),
+  status: varchar("status").default("pending"), // 'pending', 'in_progress', 'completed', 'dismissed'
+  confidence: integer("confidence").default(85), // AI confidence percentage
+  validUntil: timestamp("valid_until"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const productionMetrics = pgTable("production_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  factoryId: varchar("factory_id").notNull().references(() => factorySetups.id),
+  metricDate: timestamp("metric_date").notNull(),
+  dailyOutput: integer("daily_output").default(0),
+  efficiency: varchar("efficiency").default("0"), // percentage as string for precision
+  qualityScore: varchar("quality_score").default("0"), // percentage as string
+  wasteReduction: varchar("waste_reduction").default("0"), // percentage as string
+  energySavings: varchar("energy_savings").default("0"), // percentage as string
+  profitMargin: varchar("profit_margin").default("0"), // percentage as string
+  maintenanceHours: integer("maintenance_hours").default(0),
+  downtime: integer("downtime").default(0), // minutes
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const factoryRecommendations = pgTable("factory_recommendations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  factoryId: varchar("factory_id").notNull().references(() => factorySetups.id),
+  recommendation: text("recommendation").notNull(),
+  category: varchar("category").notNull(), // 'inventory', 'optimization', 'maintenance', 'expansion'
+  priority: varchar("priority").notNull().default("medium"), // 'high', 'medium', 'low'
+  estimatedImpact: varchar("estimated_impact"), // financial or operational impact
+  status: varchar("status").default("pending"), // 'pending', 'implemented', 'dismissed'
+  createdAt: timestamp("created_at").defaultNow()
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
@@ -322,6 +385,25 @@ export const storeVisitsRelations = relations(storeVisits, ({ one }) => ({
   salesRep: one(salesReps, { fields: [storeVisits.salesRepId], references: [salesReps.id] }),
 }));
 
+// Factory relations
+export const factorySetupsRelations = relations(factorySetups, ({ many }) => ({
+  aiInsights: many(aiInsights),
+  productionMetrics: many(productionMetrics),
+  recommendations: many(factoryRecommendations),
+}));
+
+export const aiInsightsRelations = relations(aiInsights, ({ one }) => ({
+  factory: one(factorySetups, { fields: [aiInsights.factoryId], references: [factorySetups.id] }),
+}));
+
+export const productionMetricsRelations = relations(productionMetrics, ({ one }) => ({
+  factory: one(factorySetups, { fields: [productionMetrics.factoryId], references: [factorySetups.id] }),
+}));
+
+export const factoryRecommendationsRelations = relations(factoryRecommendations, ({ one }) => ({
+  factory: one(factorySetups, { fields: [factoryRecommendations.factoryId], references: [factorySetups.id] }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertProductSchema = createInsertSchema(products).omit({ id: true, createdAt: true });
@@ -339,6 +421,12 @@ export const insertRoutePlanSchema = createInsertSchema(routePlans).omit({ id: t
 export const insertRouteStoreSchema = createInsertSchema(routeStores).omit({ id: true });
 export const insertAiOrderSuggestionSchema = createInsertSchema(aiOrderSuggestions).omit({ id: true, createdAt: true });
 export const insertStoreVisitSchema = createInsertSchema(storeVisits).omit({ id: true, createdAt: true });
+
+// Factory schemas
+export const insertFactorySetupSchema = createInsertSchema(factorySetups).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAiInsightSchema = createInsertSchema(aiInsights).omit({ id: true, createdAt: true });
+export const insertProductionMetricsSchema = createInsertSchema(productionMetrics).omit({ id: true, createdAt: true });
+export const insertFactoryRecommendationSchema = createInsertSchema(factoryRecommendations).omit({ id: true, createdAt: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -373,3 +461,13 @@ export type AiOrderSuggestion = typeof aiOrderSuggestions.$inferSelect;
 export type InsertAiOrderSuggestion = z.infer<typeof insertAiOrderSuggestionSchema>;
 export type StoreVisit = typeof storeVisits.$inferSelect;
 export type InsertStoreVisit = z.infer<typeof insertStoreVisitSchema>;
+
+// Factory types
+export type FactorySetup = typeof factorySetups.$inferSelect;
+export type InsertFactorySetup = z.infer<typeof insertFactorySetupSchema>;
+export type AiInsight = typeof aiInsights.$inferSelect;
+export type InsertAiInsight = z.infer<typeof insertAiInsightSchema>;
+export type ProductionMetrics = typeof productionMetrics.$inferSelect;
+export type InsertProductionMetrics = z.infer<typeof insertProductionMetricsSchema>;
+export type FactoryRecommendation = typeof factoryRecommendations.$inferSelect;
+export type InsertFactoryRecommendation = z.infer<typeof insertFactoryRecommendationSchema>;

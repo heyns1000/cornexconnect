@@ -2,6 +2,7 @@ import {
   users, products, inventory, distributors, orders, orderItems, 
   productionSchedule, demandForecast, salesMetrics, brands,
   salesReps, hardwareStores, routePlans, routeStores, aiOrderSuggestions, storeVisits,
+  factorySetups, aiInsights, productionMetrics, factoryRecommendations,
   type User, type InsertUser, type Product, type InsertProduct,
   type Inventory, type InsertInventory, type Distributor, type InsertDistributor,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
@@ -14,7 +15,11 @@ import {
   type RoutePlan, type InsertRoutePlan,
   type RouteStore, type InsertRouteStore,
   type AiOrderSuggestion, type InsertAiOrderSuggestion,
-  type StoreVisit, type InsertStoreVisit
+  type StoreVisit, type InsertStoreVisit,
+  type FactorySetup, type InsertFactorySetup,
+  type AiInsight, type InsertAiInsight,
+  type ProductionMetrics, type InsertProductionMetrics,
+  type FactoryRecommendation, type InsertFactoryRecommendation
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, and, gte, lte, ilike, or } from "drizzle-orm";
@@ -96,6 +101,24 @@ export interface IStorage {
   // Store Visits
   getStoreVisits(): Promise<(StoreVisit & { hardwareStore: HardwareStore; salesRep: SalesRep })[]>;
   createStoreVisit(visit: InsertStoreVisit): Promise<StoreVisit>;
+  
+  // Factory Setups
+  getFactorySetups(): Promise<FactorySetup[]>;
+  getFactorySetup(id: string): Promise<FactorySetup | undefined>;
+  createFactorySetup(factory: InsertFactorySetup): Promise<FactorySetup>;
+  updateFactorySetup(id: string, factory: Partial<InsertFactorySetup>): Promise<FactorySetup>;
+  
+  // AI Insights
+  getAiInsights(factoryId?: string): Promise<AiInsight[]>;
+  createAiInsight(insight: InsertAiInsight): Promise<AiInsight>;
+  
+  // Production Metrics
+  getProductionMetrics(factoryId: string): Promise<ProductionMetrics[]>;
+  createProductionMetrics(metrics: InsertProductionMetrics): Promise<ProductionMetrics>;
+  
+  // Factory Recommendations
+  getFactoryRecommendations(factoryId: string): Promise<FactoryRecommendation[]>;
+  createFactoryRecommendation(recommendation: InsertFactoryRecommendation): Promise<FactoryRecommendation>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -505,6 +528,67 @@ export class DatabaseStorage implements IStorage {
   async createStoreVisit(visit: InsertStoreVisit): Promise<StoreVisit> {
     const [newVisit] = await db.insert(storeVisits).values(visit).returning();
     return newVisit;
+  }
+
+  // Factory Setups
+  async getFactorySetups(): Promise<FactorySetup[]> {
+    return await db.select().from(factorySetups).where(eq(factorySetups.isActive, true)).orderBy(desc(factorySetups.createdAt));
+  }
+
+  async getFactorySetup(id: string): Promise<FactorySetup | undefined> {
+    const [factory] = await db.select().from(factorySetups).where(eq(factorySetups.id, id));
+    return factory || undefined;
+  }
+
+  async createFactorySetup(factory: InsertFactorySetup): Promise<FactorySetup> {
+    const [newFactory] = await db.insert(factorySetups).values(factory).returning();
+    return newFactory;
+  }
+
+  async updateFactorySetup(id: string, factory: Partial<InsertFactorySetup>): Promise<FactorySetup> {
+    const [updatedFactory] = await db.update(factorySetups)
+      .set({ ...factory, updatedAt: new Date() })
+      .where(eq(factorySetups.id, id))
+      .returning();
+    return updatedFactory;
+  }
+
+  // AI Insights
+  async getAiInsights(factoryId?: string): Promise<AiInsight[]> {
+    let query = db.select().from(aiInsights);
+    if (factoryId) {
+      query = query.where(eq(aiInsights.factoryId, factoryId));
+    }
+    return await query.orderBy(desc(aiInsights.createdAt));
+  }
+
+  async createAiInsight(insight: InsertAiInsight): Promise<AiInsight> {
+    const [newInsight] = await db.insert(aiInsights).values(insight).returning();
+    return newInsight;
+  }
+
+  // Production Metrics
+  async getProductionMetrics(factoryId: string): Promise<ProductionMetrics[]> {
+    return await db.select().from(productionMetrics)
+      .where(eq(productionMetrics.factoryId, factoryId))
+      .orderBy(desc(productionMetrics.metricDate));
+  }
+
+  async createProductionMetrics(metrics: InsertProductionMetrics): Promise<ProductionMetrics> {
+    const [newMetrics] = await db.insert(productionMetrics).values(metrics).returning();
+    return newMetrics;
+  }
+
+  // Factory Recommendations
+  async getFactoryRecommendations(factoryId: string): Promise<FactoryRecommendation[]> {
+    return await db.select().from(factoryRecommendations)
+      .where(eq(factoryRecommendations.factoryId, factoryId))
+      .orderBy(desc(factoryRecommendations.createdAt));
+  }
+
+  async createFactoryRecommendation(recommendation: InsertFactoryRecommendation): Promise<FactoryRecommendation> {
+    const [newRecommendation] = await db.insert(factoryRecommendations).values(recommendation).returning();
+    return newRecommendation;
   }
 }
 
