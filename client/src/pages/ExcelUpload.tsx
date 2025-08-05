@@ -421,31 +421,37 @@ export default function ExcelUpload() {
               </div>
             )}
 
-            {/* Required Columns Info */}
+            {/* Column Mapping Info */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Required Excel Columns:</CardTitle>
+                <CardTitle className="text-lg">Flexible Column Recognition:</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="font-medium mb-2">Store Information:</p>
+                    <p className="font-medium mb-2">Store Information (auto-detected):</p>
                     <ul className="space-y-1 text-gray-600">
-                      <li>• Store Name</li>
-                      <li>• Store Address</li>
-                      <li>• City/Town</li>
-                      <li>• Province</li>
+                      <li>• Store Name, Name, Store, Business Name</li>
+                      <li>• Address, Store Address, Location</li>
+                      <li>• City, Town, City/Town</li>
+                      <li>• Province, Region</li>
                     </ul>
                   </div>
                   <div>
-                    <p className="font-medium mb-2">Contact & Route Details:</p>
+                    <p className="font-medium mb-2">Contact & Route Details (flexible):</p>
                     <ul className="space-y-1 text-gray-600">
-                      <li>• Contact Person</li>
-                      <li>• Phone Number</li>
-                      <li>• Rep Name</li>
-                      <li>• Visit Frequency</li>
+                      <li>• Contact, Contact Person, Manager</li>
+                      <li>• Phone, Phone Number, Tel, Mobile</li>
+                      <li>• Rep, Rep Name, Sales Rep, Agent</li>
+                      <li>• Frequency, Visit Frequency, Schedule</li>
                     </ul>
                   </div>
+                </div>
+                <div className="mt-4 p-3 bg-blue-50 rounded">
+                  <p className="text-xs text-blue-700">
+                    <strong>Note:</strong> The system now automatically detects column headers with flexible matching. 
+                    Previous upload found 87 rows but 0 stores - improved matching should resolve this.
+                  </p>
                 </div>
               </CardContent>
             </Card>

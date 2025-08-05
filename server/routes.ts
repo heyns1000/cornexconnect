@@ -567,38 +567,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let storesCount = 0;
         let routesCount = 0;
 
-        // Process each row
+        // Process each row with flexible column matching
         for (const row of jsonData as any[]) {
-          // Create hardware store record
+          // Get all keys from the row to understand the structure
+          const keys = Object.keys(row);
+          console.log('Row keys:', keys); // Debug log
+          console.log('Row data:', row); // Debug log
+          
+          // Flexible column matching
           const storeData = {
             uploadId: upload.id,
-            storeName: row['Store Name'] || row['StoreName'] || '',
-            storeAddress: row['Store Address'] || row['Address'] || '',
-            cityTown: row['City/Town'] || row['City'] || row['Town'] || '',
-            province: row['Province'] || '',
-            contactPerson: row['Contact Person'] || row['Contact'] || '',
-            phoneNumber: row['Phone Number'] || row['Phone'] || '',
-            repName: row['Rep Name'] || row['Representative'] || '',
-            visitFrequency: row['Visit Frequency'] || row['Frequency'] || '',
+            storeName: row['Store Name'] || row['StoreName'] || row['Store'] || row['Name'] || 
+                      row['STORE NAME'] || row['STORE'] || row['Business Name'] || 
+                      keys.find(k => k.toLowerCase().includes('store') || k.toLowerCase().includes('name'))
+                      ? row[keys.find(k => k.toLowerCase().includes('store') || k.toLowerCase().includes('name'))] : '',
+            storeAddress: row['Store Address'] || row['Address'] || row['STORE ADDRESS'] || 
+                         row['Physical Address'] || row['Location'] ||
+                         keys.find(k => k.toLowerCase().includes('address') || k.toLowerCase().includes('location'))
+                         ? row[keys.find(k => k.toLowerCase().includes('address') || k.toLowerCase().includes('location'))] : '',
+            cityTown: row['City/Town'] || row['City'] || row['Town'] || row['CITY'] || row['TOWN'] ||
+                     keys.find(k => k.toLowerCase().includes('city') || k.toLowerCase().includes('town'))
+                     ? row[keys.find(k => k.toLowerCase().includes('city') || k.toLowerCase().includes('town'))] : '',
+            province: row['Province'] || row['PROVINCE'] || row['Region'] ||
+                     keys.find(k => k.toLowerCase().includes('province') || k.toLowerCase().includes('region'))
+                     ? row[keys.find(k => k.toLowerCase().includes('province') || k.toLowerCase().includes('region'))] : '',
+            contactPerson: row['Contact Person'] || row['Contact'] || row['CONTACT'] || row['Manager'] ||
+                          keys.find(k => k.toLowerCase().includes('contact') || k.toLowerCase().includes('manager'))
+                          ? row[keys.find(k => k.toLowerCase().includes('contact') || k.toLowerCase().includes('manager'))] : '',
+            phoneNumber: row['Phone Number'] || row['Phone'] || row['PHONE'] || row['Tel'] || row['Mobile'] ||
+                        keys.find(k => k.toLowerCase().includes('phone') || k.toLowerCase().includes('tel') || k.toLowerCase().includes('mobile'))
+                        ? row[keys.find(k => k.toLowerCase().includes('phone') || k.toLowerCase().includes('tel') || k.toLowerCase().includes('mobile'))] : '',
+            repName: row['Rep Name'] || row['Representative'] || row['REP'] || row['Sales Rep'] || row['Agent'] ||
+                    keys.find(k => k.toLowerCase().includes('rep') || k.toLowerCase().includes('sales') || k.toLowerCase().includes('agent'))
+                    ? row[keys.find(k => k.toLowerCase().includes('rep') || k.toLowerCase().includes('sales') || k.toLowerCase().includes('agent'))] : '',
+            visitFrequency: row['Visit Frequency'] || row['Frequency'] || row['Schedule'] || 'weekly',
             mappedToCornex: finalMappedName
           };
 
-          if (storeData.storeName) {
-            const store = await storage.createHardwareStoreFromExcel(storeData);
-            storesCount++;
+          // Only create store if we have at least a store name
+          if (storeData.storeName && storeData.storeName.trim() !== '') {
+            console.log('Creating store:', storeData); // Debug log
+            try {
+              const store = await storage.createHardwareStoreFromExcel(storeData);
+              storesCount++;
 
-            // Create route record if rep name exists
-            if (storeData.repName) {
-              await storage.createSalesRepRouteFromExcel({
-                uploadId: upload.id,
-                repName: storeData.repName,
-                routeName: `${storeData.repName} - ${storeData.cityTown}`,
-                storeId: store.id,
-                visitFrequency: storeData.visitFrequency,
-                mappedToCornex: finalMappedName
-              });
-              routesCount++;
+              // Create route record if rep name exists
+              if (storeData.repName && storeData.repName.trim() !== '') {
+                await storage.createSalesRepRouteFromExcel({
+                  uploadId: upload.id,
+                  repName: storeData.repName,
+                  routeName: `${storeData.repName} - ${storeData.cityTown || 'Route'}`,
+                  storeId: store.id,
+                  visitFrequency: storeData.visitFrequency || 'weekly',
+                  mappedToCornex: finalMappedName
+                });
+                routesCount++;
+              }
+            } catch (storeError) {
+              console.error('Error creating store:', storeError);
             }
+          } else {
+            console.log('Skipping row - no valid store name found:', row);
           }
         }
 
