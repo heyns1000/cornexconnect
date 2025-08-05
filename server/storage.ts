@@ -4,6 +4,7 @@ import {
   salesReps, hardwareStores, routePlans, routeStores, aiOrderSuggestions, storeVisits,
   factorySetups, aiInsights, productionMetrics, factoryRecommendations,
   automationRules, automationEvents, maintenanceSchedules,
+  excelUploads, hardwareStoresFromExcel, salesRepRoutesFromExcel,
   type User, type InsertUser, type Product, type InsertProduct,
   type Inventory, type InsertInventory, type Distributor, type InsertDistributor,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
@@ -653,13 +654,8 @@ export class DatabaseStorage implements IStorage {
 
   // Excel Upload - Synchronized with Hardware Store Directory
   async getExcelUploads(): Promise<any[]> {
-    return await db.query.excelUploads.findMany({
-      orderBy: (excelUploads, { desc }) => [desc(excelUploads.uploadedAt)],
-      with: {
-        hardwareStores: true,
-        salesRepRoutes: true
-      }
-    });
+    return await db.select().from(excelUploads)
+      .orderBy(desc(excelUploads.uploadedAt));
   }
 
   async createExcelUpload(upload: any): Promise<any> {
@@ -694,23 +690,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getHardwareStoresFromExcel(): Promise<any[]> {
-    return await db.query.hardwareStoresFromExcel.findMany({
-      orderBy: (hardwareStoresFromExcel, { desc }) => [desc(hardwareStoresFromExcel.createdAt)],
-      with: {
-        upload: true,
-        routes: true
-      }
-    });
+    return await db.select().from(hardwareStoresFromExcel)
+      .orderBy(desc(hardwareStoresFromExcel.createdAt));
   }
 
   async getSalesRepRoutesFromExcel(): Promise<any[]> {
-    return await db.query.salesRepRoutesFromExcel.findMany({
-      orderBy: (salesRepRoutesFromExcel, { desc }) => [desc(salesRepRoutesFromExcel.createdAt)],
-      with: {
-        upload: true,
-        store: true
-      }
-    });
+    return await db.select().from(salesRepRoutesFromExcel)
+      .orderBy(desc(salesRepRoutesFromExcel.createdAt));
   }
 
   // Public sync methods for API access
