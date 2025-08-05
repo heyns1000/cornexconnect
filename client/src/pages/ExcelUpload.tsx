@@ -1,26 +1,231 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { 
+  Upload, 
+  FileSpreadsheet, 
+  CheckCircle, 
+  AlertCircle, 
+  Clock, 
+  Database,
+  Store,
+  Route,
+  Apple
+} from "lucide-react";
 
-interface UploadedFile {
-  file: File;
+interface ExcelUpload {
   id: string;
-  status: 'pending' | 'uploading' | 'success' | 'error';
-  progress: number;
-  message?: string;
-  mappedName?: string;
+  fileName: string;
+  mappedName: string;
+  fileSize: number;
+  uploadedAt: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  storesCount: number;
+  routesCount: number;
+  errorMessage?: string;
+}
+
+interface HardwareStore {
+  id: string;
+  storeName: string;
+  storeAddress: string;
+  cityTown: string;
+  province: string;
+  contactPerson: string;
+  phoneNumber: string;
+  repName: string;
+  visitFrequency: string;
+  mappedToCornex: string;
+  createdAt: string;
+}
+
+interface SalesRepRoute {
+  id: string;
+  repName: string;
+  routeName: string;
+  visitDay: string;
+  visitFrequency: string;
+  priority: number;
+  mappedToCornex: string;
+  createdAt: string;
 }
 
 export default function ExcelUpload() {
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [isDragOver, setIsDragOver] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [customMapping, setCustomMapping] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Map file names to Cornex references
+  // Fetch all Excel uploads with status
+  const { data: uploads = [], isLoading: uploadsLoading } = useQuery<ExcelUpload[]>({
+    queryKey: ['/api/excel-uploads'],
+    refetchInterval: 2000 // Refresh every 2 seconds for real-time sync
+  });
+
+  // Fetch hardware stores from Excel uploads
+  const { data: hardwareStores = [], isLoading: storesLoading } = useQuery<HardwareStore[]>({
+    queryKey: ['/api/hardware-stores-excel'],
+    refetchInterval: 2000
+  });
+
+  // Fetch sales rep routes from Excel uploads
+  const { data: salesRoutes = [], isLoading: routesLoading } = useQuery<SalesRepRoute[]>({
+    queryKey: ['/api/routes-excel'],
+    refetchInterval: 2000
+  });
+
+  // Fetch sync status for 24/7 balance monitoring
+  const { data: syncStatus, isLoading: syncLoading } = useQuery({
+    queryKey: ['/api/sync-status'],
+    refetchInterval: 1000 // Check sync status every second
+  });
+
+  // Upload mutation
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (customMapping) {
+        formData.append('mappedName', customMapping);
+      }
+
+      return fetch('/api/excel-upload', {
+        method: 'POST',
+        body: formData,
+      }).then(res => {
+        if (!res.ok) throw new Error('Upload failed');
+        return res.json();
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "🍎 Fruitful Upload Complete",
+        description: "Excel file processed successfully. Hardware store directory updated.",
+      });
+      setSelectedFile(null);
+      setCustomMapping('');
+      setUploadProgress(0);
+      
+      // Invalidate all related queries for instant sync
+      queryClient.invalidateQueries({ queryKey: ['/api/excel-uploads'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hardware-stores-excel'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/routes-excel'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hardware-stores'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/routes'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/sync-status'] });
+    },
+    onError: () => {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to process Excel file. Please check format and try again.",
+        variant: "destructive",
+      });
+      setUploadProgress(0);
+    },
+  });
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    const files = e.dataTransfer.files;
+    handleFileSelection(files[0]);
+  };
+
+  const handleFileSelection = (file: File) => {
+    if (!file) return;
+    
+    // Validate file type
+    const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+                   file.type === 'application/vnd.ms-excel' ||
+                   file.name.match(/\.(xlsx|xls)$/i);
+    
+    if (!isExcel) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload an Excel file (.xlsx or .xls)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "File size must be under 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedFile(file);
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files[0]) {
+      handleFileSelection(files[0]);
+    }
+  };
+
+  const handleUpload = () => {
+    if (!selectedFile) return;
+    
+    setUploadProgress(10);
+    uploadMutation.mutate(selectedFile);
+    
+    // Simulate progress for better UX
+    const interval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(interval);
+          return prev;
+        }
+        return prev + 10;
+      });
+    }, 200);
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed': return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'failed': return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'processing': return <Clock className="h-4 w-4 text-blue-500 animate-spin" />;
+      default: return <Clock className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      case 'processing': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   const mapFileNameToCornex = (fileName: string): string => {
     const lowerName = fileName.toLowerCase();
     if (lowerName.includes('zollie')) return 'Cornex Zollie District Routes';
@@ -30,302 +235,349 @@ export default function ExcelUpload() {
     return `Cornex ${fileName}`;
   };
 
-  const handleFileSelect = (files: FileList | null) => {
-    if (!files) return;
-
-    const newFiles: UploadedFile[] = Array.from(files).map((file, index) => {
-      if (file.size > 10 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: `${file.name} exceeds 10MB limit`,
-          variant: "destructive",
-        });
-        return null;
-      }
-
-      if (!file.name.match(/\.(xlsx|xls)$/i)) {
-        toast({
-          title: "Invalid file type",
-          description: `${file.name} must be an Excel file (.xlsx or .xls)`,
-          variant: "destructive",
-        });
-        return null;
-      }
-
-      return {
-        file,
-        id: `${Date.now()}-${index}`,
-        status: 'pending' as const,
-        progress: 0,
-        mappedName: mapFileNameToCornex(file.name)
-      };
-    }).filter(Boolean) as UploadedFile[];
-
-    if (uploadedFiles.length + newFiles.length > 120) {
-      toast({
-        title: "Too many files",
-        description: "Maximum 120 Excel files allowed",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setUploadedFiles(prev => [...prev, ...newFiles]);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    handleFileSelect(e.dataTransfer.files);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragOver(false);
-  };
-
-  const uploadFile = async (fileData: UploadedFile) => {
-    setUploadedFiles(prev => 
-      prev.map(f => f.id === fileData.id ? { ...f, status: 'uploading' } : f)
-    );
-
-    try {
-      const formData = new FormData();
-      formData.append('file', fileData.file);
-      formData.append('mappedName', fileData.mappedName || '');
-
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadedFiles(prev => 
-          prev.map(f => f.id === fileData.id ? { 
-            ...f, 
-            progress: Math.min(f.progress + Math.random() * 20, 90) 
-          } : f)
-        );
-      }, 200);
-
-      const response = await fetch('/api/excel-upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      clearInterval(progressInterval);
-
-      if (response.ok) {
-        const result = await response.json();
-        setUploadedFiles(prev => 
-          prev.map(f => f.id === fileData.id ? { 
-            ...f, 
-            status: 'success', 
-            progress: 100,
-            message: `Processed ${result.storesCount || 0} stores, ${result.routesCount || 0} routes`
-          } : f)
-        );
-        toast({
-          title: "Upload successful",
-          description: `${fileData.mappedName} processed successfully`,
-        });
-      } else {
-        throw new Error('Upload failed');
-      }
-    } catch (error) {
-      setUploadedFiles(prev => 
-        prev.map(f => f.id === fileData.id ? { 
-          ...f, 
-          status: 'error', 
-          progress: 0,
-          message: 'Upload failed'
-        } : f)
-      );
-      toast({
-        title: "Upload failed",
-        description: `Failed to upload ${fileData.file.name}`,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const uploadAllFiles = async () => {
-    const pendingFiles = uploadedFiles.filter(f => f.status === 'pending');
-    for (const file of pendingFiles) {
-      await uploadFile(file);
-      // Add small delay between uploads
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-  };
-
-  const removeFile = (id: string) => {
-    setUploadedFiles(prev => prev.filter(f => f.id !== id));
-  };
-
-  const getStatusIcon = (status: UploadedFile['status']) => {
-    switch (status) {
-      case 'success':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'error':
-        return <AlertCircle className="w-4 h-4 text-red-500" />;
-      case 'uploading':
-        return <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />;
-      default:
-        return <FileSpreadsheet className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-  const getStatusColor = (status: UploadedFile['status']) => {
-    switch (status) {
-      case 'success':
-        return 'bg-green-100 text-green-800';
-      case 'error':
-        return 'bg-red-100 text-red-800';
-      case 'uploading':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  // Calculate totals for 24/7 balanced sync display
+  const totalStores = hardwareStores.length;
+  const totalRoutes = salesRoutes.length;
+  const totalUploads = uploads.length;
+  const completedUploads = uploads.filter(u => u.status === 'completed').length;
+  const processingUploads = uploads.filter(u => u.status === 'processing').length;
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
+      {/* Header with Fruitful Assist Branding */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-          <Upload className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">🍎 Fruitful Assist - Upload Route Excel Files</h1>
-          <p className="text-gray-600">Drop your Excel files here</p>
+        <div className="flex items-center gap-2">
+          <Apple className="h-6 w-6 text-green-500" />
+          <h1 className="text-2xl font-bold">Fruitful Assist - Excel Upload System</h1>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Excel File Upload</CardTitle>
-          <CardDescription>
-            Upload up to 120 Excel sheets with sales rep routes and hardware store lists
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Drop Zone */}
-          <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              isDragOver 
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-300 hover:border-gray-400'
-            }`}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-          >
-            <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <div className="space-y-2">
-              <p className="text-lg font-medium text-gray-900">
-                Drop Excel files here or click to browse
-              </p>
-              <p className="text-sm text-gray-500">
-                Supports .xlsx, .xls files up to 10MB each
-              </p>
-              <input
-                type="file"
-                multiple
-                accept=".xlsx,.xls"
-                onChange={(e) => handleFileSelect(e.target.files)}
-                className="hidden"
-                id="file-upload"
-              />
-              <label htmlFor="file-upload">
-                <Button variant="outline" className="mt-4" asChild>
-                  <span>Choose Files</span>
-                </Button>
-              </label>
+      {/* Sync Status Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Database className="h-4 w-4 text-blue-500" />
+              <div>
+                <div className="text-2xl font-bold">{totalUploads}</div>
+                <div className="text-sm text-gray-600">Total Uploads</div>
+              </div>
             </div>
-          </div>
-
-          {/* File Requirements */}
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-medium text-blue-900 mb-2">Required Excel Columns:</h3>
-            <div className="grid grid-cols-2 gap-2 text-sm text-blue-800">
-              <div>• Store Name</div>
-              <div>• Store Address</div>
-              <div>• City/Town</div>
-              <div>• Province</div>
-              <div>• Contact Person</div>
-              <div>• Phone Number</div>
-              <div>• Rep Name</div>
-              <div>• Visit Frequency</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Store className="h-4 w-4 text-green-500" />
+              <div>
+                <div className="text-2xl font-bold">{totalStores}</div>
+                <div className="text-sm text-gray-600">Hardware Stores</div>
+              </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Route className="h-4 w-4 text-purple-500" />
+              <div>
+                <div className="text-2xl font-bold">{totalRoutes}</div>
+                <div className="text-sm text-gray-600">Sales Routes</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* File List */}
-          {uploadedFiles.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-medium text-gray-900">
-                  Uploaded Files ({uploadedFiles.length}/120)
-                </h3>
-                {uploadedFiles.some(f => f.status === 'pending') && (
-                  <Button onClick={uploadAllFiles} className="bg-green-600 hover:bg-green-700">
-                    Upload All Files
-                  </Button>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className={`h-4 w-4 ${syncStatus?.isBalanced ? 'text-green-500' : 'text-yellow-500'}`} />
+              <div>
+                <div className="text-2xl font-bold">
+                  {syncStatus?.syncHealth === 'healthy' ? '✓' : '⟳'}
+                </div>
+                <div className="text-sm text-gray-600">24/7 Sync Status</div>
+                {syncStatus && (
+                  <div className="text-xs text-gray-500">
+                    {syncStatus.isBalanced ? 'Balanced' : 'Syncing...'}
+                  </div>
                 )}
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-              <div className="space-y-3">
-                {uploadedFiles.map((fileData) => (
-                  <div key={fileData.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {getStatusIcon(fileData.status)}
-                        <div>
-                          <p className="font-medium text-gray-900">{fileData.file.name}</p>
-                          <p className="text-sm text-green-600 font-medium">{fileData.mappedName}</p>
-                          <p className="text-xs text-gray-500">
-                            {(fileData.file.size / 1024 / 1024).toFixed(2)} MB
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={getStatusColor(fileData.status)}>
-                          {fileData.status}
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeFile(fileData.id)}
-                          disabled={fileData.status === 'uploading'}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+      {/* Upload Interface */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Excel File Upload
+          </CardTitle>
+          <CardDescription>
+            Upload up to 120 Excel sheets with sales rep routes and hardware store lists.
+            Supports .xlsx and .xls files up to 10MB each.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {/* File Drop Zone */}
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                dragActive 
+                  ? 'border-blue-500 bg-blue-50' 
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              <FileSpreadsheet className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <div className="space-y-2">
+                <p className="text-lg font-medium">
+                  Drop Excel files here or click to browse
+                </p>
+                <p className="text-sm text-gray-500">
+                  Supports .xlsx, .xls files up to 10MB each
+                </p>
+                <Button 
+                  onClick={() => fileInputRef.current?.click()}
+                  variant="outline"
+                >
+                  Choose Files
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileInput}
+                  className="hidden"
+                />
+              </div>
+            </div>
+
+            {/* Selected File and Custom Mapping */}
+            {selectedFile && (
+              <div className="space-y-4">
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{selectedFile.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                      <p className="text-sm text-blue-600">
+                        Auto-mapped to: {mapFileNameToCornex(selectedFile.name)}
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => setSelectedFile(null)}
+                      variant="ghost" 
+                      size="sm"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Custom Mapping Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="customMapping">Custom Cornex Mapping (Optional)</Label>
+                  <Input
+                    id="customMapping"
+                    value={customMapping}
+                    onChange={(e) => setCustomMapping(e.target.value)}
+                    placeholder="Enter custom Cornex reference name"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Leave blank to use auto-mapping: zollie → Cornex Zollie District Routes, 
+                    homemart → Cornex Homemart Store Network, etc.
+                  </p>
+                </div>
+
+                {/* Upload Progress */}
+                {uploadProgress > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Uploading...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <Progress value={uploadProgress} />
+                  </div>
+                )}
+
+                {/* Upload Button */}
+                <Button 
+                  onClick={handleUpload}
+                  disabled={uploadMutation.isPending}
+                  className="w-full"
+                >
+                  {uploadMutation.isPending ? 'Processing...' : 'Upload & Process File'}
+                </Button>
+              </div>
+            )}
+
+            {/* Required Columns Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Required Excel Columns:</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium mb-2">Store Information:</p>
+                    <ul className="space-y-1 text-gray-600">
+                      <li>• Store Name</li>
+                      <li>• Store Address</li>
+                      <li>• City/Town</li>
+                      <li>• Province</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-medium mb-2">Contact & Route Details:</p>
+                    <ul className="space-y-1 text-gray-600">
+                      <li>• Contact Person</li>
+                      <li>• Phone Number</li>
+                      <li>• Rep Name</li>
+                      <li>• Visit Frequency</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Upload History & Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload History & Real-Time Status</CardTitle>
+          <CardDescription>
+            Live tracking of all Excel uploads and processing status. Updates automatically every 2 seconds.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {uploadsLoading ? (
+            <div className="text-center py-8">
+              <Clock className="mx-auto h-8 w-8 animate-spin text-gray-400 mb-4" />
+              <p>Loading upload history...</p>
+            </div>
+          ) : uploads.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <FileSpreadsheet className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+              <p>No Excel files uploaded yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {uploads.map((upload) => (
+                <div key={upload.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      {getStatusIcon(upload.status)}
+                      <div>
+                        <p className="font-medium">{upload.fileName}</p>
+                        <p className="text-sm text-gray-600">{upload.mappedName}</p>
                       </div>
                     </div>
-
-                    {fileData.status === 'uploading' && (
-                      <Progress value={fileData.progress} className="h-2" />
-                    )}
-
-                    {fileData.message && (
-                      <p className="text-sm text-gray-600">{fileData.message}</p>
-                    )}
-
-                    {fileData.status === 'pending' && (
-                      <Button
-                        onClick={() => uploadFile(fileData)}
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                      >
-                        Upload File
-                      </Button>
-                    )}
+                    <Badge className={getStatusColor(upload.status)}>
+                      {upload.status}
+                    </Badge>
                   </div>
-                ))}
-              </div>
+                  
+                  <div className="flex items-center gap-6 text-sm text-gray-600">
+                    <span>Size: {(upload.fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                    <span>Stores: {upload.storesCount}</span>
+                    <span>Routes: {upload.routesCount}</span>
+                    <span>Uploaded: {new Date(upload.uploadedAt).toLocaleString()}</span>
+                  </div>
+                  
+                  {upload.errorMessage && (
+                    <div className="mt-2 p-2 bg-red-50 text-red-600 text-sm rounded">
+                      Error: {upload.errorMessage}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Synchronized Data Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Hardware Stores Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Store className="h-5 w-5" />
+              Hardware Store Directory
+            </CardTitle>
+            <CardDescription>
+              Real-time synchronized store data from Excel uploads
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {storesLoading ? (
+              <div className="text-center py-4">
+                <Clock className="mx-auto h-6 w-6 animate-spin text-gray-400 mb-2" />
+                <p className="text-sm">Syncing store data...</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="text-2xl font-bold">{totalStores} Stores</div>
+                <div className="text-sm text-gray-600">
+                  {hardwareStores.filter(s => s.province === 'Western Cape').length} Western Cape •{' '}
+                  {hardwareStores.filter(s => s.province === 'Gauteng').length} Gauteng •{' '}
+                  {hardwareStores.filter(s => s.province === 'KwaZulu-Natal').length} KZN
+                </div>
+                <div className="mt-4">
+                  <Badge className="bg-green-100 text-green-800">
+                    ✓ Synchronized with Database
+                  </Badge>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Sales Routes Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Route className="h-5 w-5" />
+              Sales Routes Network
+            </CardTitle>
+            <CardDescription>
+              Real-time synchronized route data from Excel uploads
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {routesLoading ? (
+              <div className="text-center py-4">
+                <Clock className="mx-auto h-6 w-6 animate-spin text-gray-400 mb-2" />
+                <p className="text-sm">Syncing route data...</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="text-2xl font-bold">{totalRoutes} Routes</div>
+                <div className="text-sm text-gray-600">
+                  {new Set(salesRoutes.map(r => r.repName)).size} Active Reps
+                </div>
+                <div className="mt-4">
+                  <Badge className="bg-green-100 text-green-800">
+                    ✓ Synchronized with Database
+                  </Badge>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

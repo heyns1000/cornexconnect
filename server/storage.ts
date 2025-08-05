@@ -651,22 +651,23 @@ export class DatabaseStorage implements IStorage {
     return newSchedule;
   }
 
-  // Excel Upload
+  // Excel Upload - Synchronized with Hardware Store Directory
   async getExcelUploads(): Promise<any[]> {
-    const { excelUploads } = await import("@shared/schema");
-    const { desc } = await import("drizzle-orm");
-    return await db.select().from(excelUploads)
-      .orderBy(desc(excelUploads.uploadedAt));
+    return await db.query.excelUploads.findMany({
+      orderBy: (excelUploads, { desc }) => [desc(excelUploads.uploadedAt)],
+      with: {
+        hardwareStores: true,
+        salesRepRoutes: true
+      }
+    });
   }
 
   async createExcelUpload(upload: any): Promise<any> {
-    const { excelUploads } = await import("@shared/schema");
     const [newUpload] = await db.insert(excelUploads).values(upload).returning();
     return newUpload;
   }
 
   async updateExcelUpload(id: string, updates: any): Promise<any> {
-    const { excelUploads } = await import("@shared/schema");
     const [updated] = await db.update(excelUploads)
       .set(updates)
       .where(eq(excelUploads.id, id))
@@ -675,29 +676,119 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createHardwareStoreFromExcel(store: any): Promise<any> {
-    const { hardwareStoresFromExcel } = await import("@shared/schema");
     const [newStore] = await db.insert(hardwareStoresFromExcel).values(store).returning();
+    
+    // Sync with main hardware stores table for 24/7 balance
+    await this.syncStoreToMainDirectory(newStore);
+    
     return newStore;
   }
 
   async createSalesRepRouteFromExcel(route: any): Promise<any> {
-    const { salesRepRoutesFromExcel } = await import("@shared/schema");
     const [newRoute] = await db.insert(salesRepRoutesFromExcel).values(route).returning();
+    
+    // Sync with main routes table for 24/7 balance
+    await this.syncRouteToMainDirectory(newRoute);
+    
     return newRoute;
   }
 
   async getHardwareStoresFromExcel(): Promise<any[]> {
-    const { hardwareStoresFromExcel } = await import("@shared/schema");
-    const { desc } = await import("drizzle-orm");
-    return await db.select().from(hardwareStoresFromExcel)
-      .orderBy(desc(hardwareStoresFromExcel.createdAt));
+    return await db.query.hardwareStoresFromExcel.findMany({
+      orderBy: (hardwareStoresFromExcel, { desc }) => [desc(hardwareStoresFromExcel.createdAt)],
+      with: {
+        upload: true,
+        routes: true
+      }
+    });
   }
 
   async getSalesRepRoutesFromExcel(): Promise<any[]> {
-    const { salesRepRoutesFromExcel } = await import("@shared/schema");
-    const { desc } = await import("drizzle-orm");
-    return await db.select().from(salesRepRoutesFromExcel)
-      .orderBy(desc(salesRepRoutesFromExcel.createdAt));
+    return await db.query.salesRepRoutesFromExcel.findMany({
+      orderBy: (salesRepRoutesFromExcel, { desc }) => [desc(salesRepRoutesFromExcel.createdAt)],
+      with: {
+        upload: true,
+        store: true
+      }
+    });
+  }
+
+  // Public sync methods for API access
+  async syncStoreToMainDirectory(excelStore: any): Promise<void> {
+    try {
+      // Check if store already exists in main directory
+      const existingStore = await db.select()
+        .from(hardwareStores)
+        .where(eq(hardwareStores.name, excelStore.storeName))
+        .limit(1);
+
+      if (existingStore.length === 0) {
+        // Create new store in main directory
+        await db.insert(hardwareStores).values({
+          name: excelStore.storeName,
+          address: excelStore.storeAddress,
+          city: excelStore.cityTown,
+          province: excelStore.province,
+          contactPerson: excelStore.contactPerson,
+          phoneNumber: excelStore.phoneNumber,
+          size: 'medium', // Default value
+          creditRating: 'good', // Default value
+          region: excelStore.province,
+          gpsCoordinates: '', // Will be filled later
+          lastVisitDate: null,
+          preferredVisitDay: 'monday',
+          notes: `Imported from Excel: ${excelStore.mappedToCornex}`
+        });
+      }
+    } catch (error) {
+      console.error('Error syncing store to main directory:', error);
+    }
+  }
+
+  async syncRouteToMainDirectory(excelRoute: any): Promise<void> {
+    try {
+      // Check if rep exists
+      let rep = await db.select()
+        .from(salesReps)
+        .where(eq(salesReps.name, excelRoute.repName))
+        .limit(1);
+
+      if (rep.length === 0) {
+        // Create new sales rep
+        const [newRep] = await db.insert(salesReps).values({
+          name: excelRoute.repName,
+          email: `${excelRoute.repName.toLowerCase().replace(' ', '.')}@cornex.co.za`,
+          phone: '',
+          region: 'South Africa',
+          territory: excelRoute.routeName || 'General',
+          performanceRating: 85, // Default value
+          targetSales: 50000, // Default value
+          notes: `Imported from Excel: ${excelRoute.mappedToCornex}`
+        }).returning();
+        rep = [newRep];
+      }
+
+      // Create route plan if it doesn't exist
+      const existingRoute = await db.select()
+        .from(routePlans)
+        .where(eq(routePlans.name, excelRoute.routeName || `${excelRoute.repName} Route`))
+        .limit(1);
+
+      if (existingRoute.length === 0) {
+        await db.insert(routePlans).values({
+          name: excelRoute.routeName || `${excelRoute.repName} Route`,
+          salesRepId: rep[0].id,
+          description: `Auto-generated from Excel upload: ${excelRoute.mappedToCornex}`,
+          frequency: excelRoute.visitFrequency || 'weekly',
+          estimatedDuration: 480, // 8 hours default
+          optimizationScore: 75, // Default value
+          totalDistance: 0, // Will be calculated later
+          isActive: true
+        });
+      }
+    } catch (error) {
+      console.error('Error syncing route to main directory:', error);
+    }
   }
 }
 

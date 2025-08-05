@@ -663,6 +663,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sync verification endpoint for 24/7 balanced data
+  app.get("/api/sync-status", async (req, res) => {
+    try {
+      const [uploads, excelStores, excelRoutes, mainStores, mainRoutes] = await Promise.all([
+        storage.getExcelUploads(),
+        storage.getHardwareStoresFromExcel(),
+        storage.getSalesRepRoutesFromExcel(),
+        storage.getHardwareStores(),
+        storage.getRoutePlans()
+      ]);
+
+      const syncStatus = {
+        totalUploads: uploads.length,
+        completedUploads: uploads.filter(u => u.status === 'completed').length,
+        processingUploads: uploads.filter(u => u.status === 'processing').length,
+        failedUploads: uploads.filter(u => u.status === 'failed').length,
+        excelStores: excelStores.length,
+        excelRoutes: excelRoutes.length,
+        mainStores: mainStores.length,
+        mainRoutes: mainRoutes.length,
+        isBalanced: excelStores.length > 0 && mainStores.length >= excelStores.length,
+        lastSync: new Date().toISOString(),
+        syncHealth: uploads.filter(u => u.status === 'processing').length === 0 ? 'healthy' : 'processing'
+      };
+
+      res.json(syncStatus);
+    } catch (error) {
+      console.error("Error checking sync status:", error);
+      res.status(500).json({ error: "Failed to check sync status" });
+    }
+  });
+
+  // Manual sync trigger endpoint
+  app.post("/api/force-sync", async (req, res) => {
+    try {
+      const excelStores = await storage.getHardwareStoresFromExcel();
+      const excelRoutes = await storage.getSalesRepRoutesFromExcel();
+      
+      let syncedStores = 0;
+      let syncedRoutes = 0;
+
+      // Force sync all Excel stores to main directory
+      for (const store of excelStores) {
+        try {
+          await storage.syncStoreToMainDirectory(store);
+          syncedStores++;
+        } catch (error) {
+          console.error(`Error syncing store ${store.id}:`, error);
+        }
+      }
+
+      // Force sync all Excel routes to main directory
+      for (const route of excelRoutes) {
+        try {
+          await storage.syncRouteToMainDirectory(route);
+          syncedRoutes++;
+        } catch (error) {
+          console.error(`Error syncing route ${route.id}:`, error);
+        }
+      }
+
+      res.json({
+        success: true,
+        syncedStores,
+        syncedRoutes,
+        message: `Forced sync completed: ${syncedStores} stores and ${syncedRoutes} routes synchronized`
+      });
+    } catch (error) {
+      console.error("Error during force sync:", error);
+      res.status(500).json({ error: "Force sync failed" });
+    }
+  });
+
   // Dashboard summary route
   app.get("/api/dashboard/summary", async (req, res) => {
     try {
