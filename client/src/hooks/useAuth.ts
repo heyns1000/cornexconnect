@@ -1,19 +1,52 @@
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
+import { useState, useEffect, useRef } from "react";
 
 export function useAuth() {
-  // Temporarily disable auth to show landing page
-  const { data: user, isLoading, error } = useQuery<User>({
-    queryKey: ["/api/auth/user"],
-    enabled: false, // Disable auth query for now to fix infinite loop
-    retry: false,
-    refetchOnWindowFocus: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+  const [authState, setAuthState] = useState<{
+    user: User | null;
+    isLoading: boolean;
+    isAuthenticated: boolean;
+    checked: boolean;
+  }>({
+    user: null,
+    isLoading: true,
+    isAuthenticated: false,
+    checked: false,
   });
 
-  return {
-    user: null, // Temporarily return null to show landing page
-    isLoading: false, // Not loading since query is disabled
-    isAuthenticated: false, // Show landing page
-  };
+  const { data: user, isLoading, error, isSuccess } = useQuery<User>({
+    queryKey: ["/api/auth/user"],
+    enabled: !authState.checked, // Only run once until checked
+    retry: false, // No retries to prevent loops
+    refetchOnWindowFocus: false,
+    staleTime: Infinity, // Cache forever until manual refresh
+    refetchInterval: false,
+    gcTime: Infinity, // Keep in cache
+  });
+
+  // Update auth state when query completes
+  useEffect(() => {
+    if (!isLoading) {
+      if (user && !error) {
+        // Successfully authenticated
+        setAuthState({
+          user,
+          isLoading: false,
+          isAuthenticated: true,
+          checked: true,
+        });
+      } else {
+        // Not authenticated
+        setAuthState({
+          user: null,
+          isLoading: false,
+          isAuthenticated: false,
+          checked: true,
+        });
+      }
+    }
+  }, [user, isLoading, error]);
+
+  return authState;
 }
