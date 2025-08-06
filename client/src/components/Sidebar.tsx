@@ -49,7 +49,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   return (
     <aside className={cn(
-      "bg-white shadow-lg border-r border-gray-200 sidebar-transition flex flex-col",
+      "bg-white shadow-lg border-r border-gray-200 sidebar-transition flex flex-col transition-all duration-300 ease-out",
       collapsed ? "w-16" : "w-64"
     )}>
       {/* Collapse/Expand Button */}
@@ -72,11 +72,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             return (
               <Link key={item.name} href={item.href}>
                 <div className={cn(
-                  "nav-item",
-                  isActive(item.href) && "active"
+                  "flex items-center p-3 mx-2 my-1 rounded-lg transition-all duration-200 ease-out cursor-pointer",
+                  isActive(item.href) 
+                    ? "bg-gradient-to-r from-emerald-100 to-blue-100 text-emerald-700 font-semibold shadow-sm" 
+                    : "text-gray-600 hover:text-emerald-700 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-blue-50"
                 )}>
-                  <Icon className="w-5 h-5 mr-3 flex-shrink-0" />
-                  {!collapsed && <span>{item.name}</span>}
+                  <Icon className="w-5 h-5 mr-3 flex-shrink-0 transition-transform duration-200 ease-out hover:scale-110" />
+                  {!collapsed && <span className="transition-opacity duration-300">{item.name}</span>}
                 </div>
               </Link>
             );

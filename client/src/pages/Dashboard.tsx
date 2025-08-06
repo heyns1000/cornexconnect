@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, Cpu, Globe, RotateCw, RefreshCw } from "lucide-react";
+import { motion } from "framer-motion";
 import MetricCard from "@/components/MetricCard";
 import DemandChart from "@/components/DemandChart";
 import ProductionSchedule from "@/components/ProductionSchedule";
@@ -27,23 +28,34 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
       <div className="space-y-8 p-8">
         {/* Page Header */}
-        <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl px-8 py-6">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl px-8 py-6 card-hover-transition"
+        >
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center space-x-3 mb-2">
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-600">
+                <motion.div 
+                  whileHover={{ scale: 1.1, rotate: 180 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-600"
+                >
                   <Cpu className="h-6 w-6 text-white" />
-                </div>
+                </motion.div>
                 <h2 className="text-2xl font-bold text-gray-900">AI-Powered Operations Dashboard</h2>
               </div>
               <p className="text-gray-600 mt-1 ml-13">🍎 Real-time insights across global manufacturing and distribution network</p>
             </div>
-            <Button className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white shadow-lg">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh Data
-            </Button>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white shadow-lg">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh Data
+              </Button>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
 
       {/* Real-time Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
