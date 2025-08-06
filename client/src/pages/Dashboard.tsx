@@ -24,20 +24,26 @@ export default function Dashboard() {
   });
 
   return (
-    <div className="space-y-8 p-8">
-      {/* Page Header */}
-      <div className="bg-white border-b border-gray-200 px-8 py-6 -mx-8 -mt-8 mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">AI-Powered Operations Dashboard</h2>
-            <p className="text-gray-600 mt-1">Real-time insights across global manufacturing and distribution network</p>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="space-y-8 p-8">
+        {/* Page Header */}
+        <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center space-x-3 mb-2">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-600">
+                  <Cpu className="h-6 w-6 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">AI-Powered Operations Dashboard</h2>
+              </div>
+              <p className="text-gray-600 mt-1 ml-13">🍎 Real-time insights across global manufacturing and distribution network</p>
+            </div>
+            <Button className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white shadow-lg">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh Data
+            </Button>
           </div>
-          <Button className="bg-cornex-blue hover:bg-cornex-dark">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh Data
-          </Button>
         </div>
-      </div>
 
       {/* Real-time Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -78,48 +84,63 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* AI Demand Forecast */}
-        <Card className="dashboard-card">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>AI Demand Forecasting</CardTitle>
-              <div className="flex items-center space-x-2 text-sm text-green-600">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>95.3% Accuracy</span>
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* AI Demand Forecast */}
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center">
+                    <TrendingUp className="h-4 w-4 text-white" />
+                  </div>
+                  <span>AI Demand Forecasting</span>
+                </CardTitle>
+                <div className="flex items-center space-x-2 text-sm text-green-600">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span>🍎 95.3% Accuracy</span>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <DemandChart />
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              <DemandChart />
+            </CardContent>
+          </Card>
 
-        {/* Production Schedule */}
-        <Card className="dashboard-card">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Production Schedule</CardTitle>
-              <Button variant="link" className="text-cornex-blue p-0">
-                View Details →
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ProductionSchedule />
-          </CardContent>
-        </Card>
-      </div>
+          {/* Production Schedule */}
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                    <Cpu className="h-4 w-4 text-white" />
+                  </div>
+                  <span>Production Schedule</span>
+                </CardTitle>
+                <Button variant="link" className="text-blue-600 hover:text-blue-800 p-0">
+                  View Details →
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ProductionSchedule />
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Product Performance & Global Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Top Performing SKUs */}
-        <Card className="dashboard-card">
-          <CardHeader>
-            <CardTitle>Top Performing SKUs</CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Product Performance & Global Distribution */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Top Performing SKUs */}
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                  <TrendingUp className="h-4 w-4 text-white" />
+                </div>
+                <span>Top Performing SKUs</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
             <div className="space-y-4">
               {(topProducts && Array.isArray(topProducts) ? topProducts.slice(0, 5) : []).map((item: any) => (
                 <div key={item.product.id} className="flex items-center justify-between">
@@ -173,18 +194,31 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Global Distribution Map */}
-        <div className="lg:col-span-2">
-          <Card className="dashboard-card h-full">
-            <CardContent className="p-6">
+          {/* Global Distribution Network */}
+          <Card className="lg:col-span-2 bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                    <Globe className="h-4 w-4 text-white" />
+                  </div>
+                  <span>Global Distribution Network</span>
+                </CardTitle>
+                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                  <span>🟢 Active: {(summary as any)?.distributorsCount || 0}</span>
+                  <span>📍 Countries: 16</span>
+                  <span>🍎 Real-time sync</span>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
               <DistributorMap />
             </CardContent>
           </Card>
         </div>
-      </div>
 
-      {/* Cornex Brand Portfolio Showcase */}
-      <Card className="dashboard-card border-2 border-cornex-blue/20 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+        {/* Cornex Brand Portfolio Showcase */}
+        <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl border-2 border-emerald-200/50 bg-gradient-to-br from-emerald-50 via-white to-blue-50">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
@@ -236,8 +270,8 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* AI Insights Panel */}
-      <Card className="cornex-gradient text-white">
+        {/* AI Insights Panel */}
+        <Card className="bg-gradient-to-r from-emerald-500 to-blue-600 text-white shadow-xl rounded-2xl">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -253,7 +287,8 @@ export default function Dashboard() {
             </Button>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

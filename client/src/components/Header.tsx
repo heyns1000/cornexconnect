@@ -25,20 +25,20 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <header className="bg-white/80 backdrop-blur-sm border-b border-white/20 sticky top-0 z-50 shadow-xl">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo & Brand */}
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-cornex-blue to-cornex-dark rounded-xl flex items-center justify-center shadow-lg">
+            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-blue-600 shadow-lg">
               <span className="text-white font-bold text-xl">C</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-cornex-blue to-cornex-dark bg-clip-text text-transparent">
-                Cornex™ Global Platform
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                CornexConnect
               </h1>
-              <p className="text-xs text-gray-500 font-medium">
-                AI-Powered Manufacturing Excellence • FAA.Zone Sovereign Scrolls
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                🍎 Powered by Fruitful Assist AI • Manufacturing Excellence
               </p>
             </div>
           </div>
@@ -61,7 +61,7 @@ export default function Header() {
             
             {/* Refresh Button */}
             <Button 
-              variant="outline" 
+              className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white shadow-lg"
               size="sm" 
               onClick={handleRefresh}
               disabled={isRefreshing}
