@@ -5,7 +5,7 @@ import {
   factorySetups, aiInsights, productionMetrics, factoryRecommendations,
   automationRules, automationEvents, maintenanceSchedules,
   excelUploads, hardwareStoresFromExcel, salesRepRoutesFromExcel,
-  type User, type InsertUser, type Product, type InsertProduct,
+  type User, type InsertUser, type UpsertUser, type Product, type InsertProduct,
   type Inventory, type InsertInventory, type Distributor, type InsertDistributor,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
   type ProductionSchedule, type InsertProductionSchedule,
@@ -30,8 +30,9 @@ import { db } from "./db";
 import { eq, sql, desc, asc, and, gte, lte, ilike, or } from "drizzle-orm";
 
 export interface IStorage {
-  // Users
+  // Users (Replit Auth compatible)
   getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
@@ -145,8 +146,23 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await db.select().from(users).where(eq(users.email, username));
     return user || undefined;
   }
 

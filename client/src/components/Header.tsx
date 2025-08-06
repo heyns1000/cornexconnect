@@ -1,11 +1,20 @@
-import { Bell, RefreshCw } from "lucide-react";
+import { Bell, RefreshCw, LogOut, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/useAuth";
 import { CURRENCIES } from "@/lib/constants";
 import { useState } from "react";
 
 export default function Header() {
+  const { user } = useAuth();
   const [selectedCurrency, setSelectedCurrency] = useState("ZAR");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -70,13 +79,42 @@ export default function Header() {
             {/* User Menu */}
             <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">Sarah Chen</p>
-                <p className="text-xs text-gray-500">Global Operations Manager</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {user?.firstName && user?.lastName 
+                    ? `${user.firstName} ${user.lastName}` 
+                    : user?.email || "User"}
+                </p>
+                <p className="text-xs text-gray-500">{user?.role || "Team Member"}</p>
               </div>
-              <Avatar>
-                <AvatarImage src="" />
-                <AvatarFallback className="bg-cornex-blue text-white">SC</AvatarFallback>
-              </Avatar>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar>
+                      <AvatarImage src={user?.profileImageUrl || ""} />
+                      <AvatarFallback className="bg-cornex-blue text-white">
+                        {user?.firstName && user?.lastName
+                          ? `${user.firstName[0]}${user.lastName[0]}`
+                          : user?.email?.[0]?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end">
+                  <DropdownMenuItem>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => window.location.href = '/api/logout'}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>

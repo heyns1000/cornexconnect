@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import { 
   insertProductSchema, 
   insertDistributorSchema, 
@@ -24,7 +25,7 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     const isExcel = file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
                    file.mimetype === 'application/vnd.ms-excel' ||
-                   file.originalname.match(/\.(xlsx|xls)$/i);
+                   !!file.originalname.match(/\.(xlsx|xls)$/i);
     cb(null, isExcel);
   }
 });
@@ -40,8 +41,31 @@ const mapFileNameToCornex = (fileName: string): string => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup Replit Authentication
+  await setupAuth(app);
+
   // Initialize sample data
   await initializeSampleData();
+
+  // Authentication routes
+  app.get('/api/auth/user', async (req: any, res) => {
+    try {
+      // Check if user is authenticated without middleware throwing error
+      if (!req.isAuthenticated() || !req.user?.claims?.sub) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(401).json({ message: "Not authenticated" });
+    }
+  });
 
   // Products routes
   app.get("/api/products", async (req, res) => {
