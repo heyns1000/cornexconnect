@@ -1,12 +1,11 @@
 import { 
-  companies, users, products, inventory, distributors, orders, orderItems, 
+  users, products, inventory, distributors, orders, orderItems, 
   productionSchedule, demandForecast, salesMetrics, brands,
   salesReps, hardwareStores, routePlans, routeStores, aiOrderSuggestions, storeVisits,
   factorySetups, aiInsights, productionMetrics, factoryRecommendations,
   automationRules, automationEvents, maintenanceSchedules,
   excelUploads, hardwareStoresFromExcel, salesRepRoutesFromExcel,
   purchaseOrders, purchaseOrderItems, poStatusHistory, poDocuments,
-  type Company, type InsertCompany,
   type User, type InsertUser, type UpsertUser, type Product, type InsertProduct,
   type Inventory, type InsertInventory, type Distributor, type InsertDistributor,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
@@ -36,76 +35,68 @@ import { db } from "./db";
 import { eq, sql, desc, asc, and, gte, lte, ilike, or } from "drizzle-orm";
 
 export interface IStorage {
-  // Companies (Multi-tenant SaaS)
-  getCompanies(): Promise<Company[]>;
-  getCompany(id: string): Promise<Company | undefined>;
-  getCompanyBySlug(slug: string): Promise<Company | undefined>;
-  createCompany(company: InsertCompany): Promise<Company>;
-  updateCompany(id: string, company: Partial<InsertCompany>): Promise<Company>;
-  
   // Users (Replit Auth compatible)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  getUsersByCompany(companyId: string): Promise<User[]>;
   
-  // Products (Company-aware)
-  getProducts(companyId: string): Promise<Product[]>;
-  getProduct(id: string, companyId: string): Promise<Product | undefined>;
-  getProductBySku(sku: string, companyId: string): Promise<Product | undefined>;
+  // Products
+  getProducts(): Promise<Product[]>;
+  getProduct(id: string): Promise<Product | undefined>;
+  getProductBySku(sku: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
-  updateProduct(id: string, product: Partial<InsertProduct>, companyId: string): Promise<Product>;
-  deleteProduct(id: string, companyId: string): Promise<void>;
-  searchProducts(query: string, companyId: string): Promise<Product[]>;
+  updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product>;
+  deleteProduct(id: string): Promise<void>;
+  searchProducts(query: string): Promise<Product[]>;
   
-  // Inventory (Company-aware)
-  getInventory(companyId: string): Promise<(Inventory & { product: Product })[]>;
-  getInventoryByProduct(productId: string, companyId: string): Promise<Inventory | undefined>;
-  updateInventory(productId: string, inventory: Partial<InsertInventory>, companyId: string): Promise<Inventory>;
+  // Inventory
+  getInventory(): Promise<(Inventory & { product: Product })[]>;
+  getInventoryByProduct(productId: string): Promise<Inventory | undefined>;
+  updateInventory(productId: string, inventory: Partial<InsertInventory>): Promise<Inventory>;
   
-  // Distributors (Company-aware)
-  getDistributors(companyId: string): Promise<Distributor[]>;
-  getDistributor(id: string, companyId: string): Promise<Distributor | undefined>;
+  // Distributors
+  getDistributors(): Promise<Distributor[]>;
+  getDistributor(id: string): Promise<Distributor | undefined>;
   createDistributor(distributor: InsertDistributor): Promise<Distributor>;
-  updateDistributor(id: string, distributor: Partial<InsertDistributor>, companyId: string): Promise<Distributor>;
-  getDistributorsByRegion(region: string, companyId: string): Promise<Distributor[]>;
+  updateDistributor(id: string, distributor: Partial<InsertDistributor>): Promise<Distributor>;
+  getDistributorsByRegion(region: string): Promise<Distributor[]>;
   
-  // Orders (Company-aware)
-  getOrders(companyId: string): Promise<(Order & { distributor: Distributor })[]>;
-  getOrder(id: string, companyId: string): Promise<(Order & { distributor: Distributor; items: (OrderItem & { product: Product })[] }) | undefined>;
+  // Orders
+  getOrders(): Promise<(Order & { distributor: Distributor })[]>;
+  getOrder(id: string): Promise<(Order & { distributor: Distributor; items: (OrderItem & { product: Product })[] }) | undefined>;
   createOrder(order: InsertOrder): Promise<Order>;
-  updateOrderStatus(id: string, status: string, companyId: string): Promise<Order>;
-  getOrdersByDistributor(distributorId: string, companyId: string): Promise<Order[]>;
+  updateOrderStatus(id: string, status: string): Promise<Order>;
+  getOrdersByDistributor(distributorId: string): Promise<Order[]>;
   
-  // Production Schedule (Company-aware)
-  getProductionSchedule(companyId: string): Promise<(ProductionSchedule & { product: Product })[]>;
+  // Production Schedule
+  getProductionSchedule(): Promise<(ProductionSchedule & { product: Product })[]>;
   createProductionSchedule(schedule: InsertProductionSchedule): Promise<ProductionSchedule>;
-  updateProductionSchedule(id: string, schedule: Partial<InsertProductionSchedule>, companyId: string): Promise<ProductionSchedule>;
-  getProductionScheduleByDate(startDate: Date, endDate: Date, companyId: string): Promise<(ProductionSchedule & { product: Product })[]>;
+  updateProductionSchedule(id: string, schedule: Partial<InsertProductionSchedule>): Promise<ProductionSchedule>;
+  getProductionScheduleByDate(startDate: Date, endDate: Date): Promise<(ProductionSchedule & { product: Product })[]>;
   
-  // Demand Forecast (Company-aware)
-  getDemandForecast(companyId: string, productId?: string, region?: string): Promise<(DemandForecast & { product: Product })[]>;
+  // Demand Forecast
+  getDemandForecast(productId?: string, region?: string): Promise<(DemandForecast & { product: Product })[]>;
   createDemandForecast(forecast: InsertDemandForecast): Promise<DemandForecast>;
   
-  // Sales Metrics (Company-aware)
-  getSalesMetrics(companyId: string, startDate?: Date, endDate?: Date, region?: string): Promise<SalesMetrics[]>;
+  // Sales Metrics
+  getSalesMetrics(startDate?: Date, endDate?: Date, region?: string): Promise<SalesMetrics[]>;
   createSalesMetrics(metrics: InsertSalesMetrics): Promise<SalesMetrics>;
-  getSalesMetricsByRegion(companyId: string): Promise<{ region: string; revenue: string; units: number }[]>;
-  getTopProducts(companyId: string, limit?: number): Promise<{ product: Product; revenue: string; units: number }[]>;
+  getSalesMetricsByRegion(): Promise<{ region: string; revenue: string; units: number }[]>;
+  getTopProducts(limit?: number): Promise<{ product: Product; revenue: string; units: number }[]>;
   
-  // Brands (Company-aware)
-  getBrands(companyId: string): Promise<Brand[]>;
+  // Brands
+  getBrands(): Promise<Brand[]>;
   createBrand(brand: InsertBrand): Promise<Brand>;
   
-  // Sales Reps (Company-aware)
-  getSalesReps(companyId: string): Promise<SalesRep[]>;
-  getSalesRep(id: string, companyId: string): Promise<SalesRep | undefined>;
+  // Sales Reps
+  getSalesReps(): Promise<SalesRep[]>;
+  getSalesRep(id: string): Promise<SalesRep | undefined>;
   createSalesRep(rep: InsertSalesRep): Promise<SalesRep>;
   
-  // Hardware Stores (Company-aware)
-  getHardwareStores(companyId: string): Promise<HardwareStore[]>;
-  getHardwareStore(id: string, companyId: string): Promise<HardwareStore | undefined>;
+  // Hardware Stores
+  getHardwareStores(): Promise<HardwareStore[]>;
+  getHardwareStore(id: string): Promise<HardwareStore | undefined>;
   createHardwareStore(store: InsertHardwareStore): Promise<HardwareStore>;
   getHardwareStoresByProvince(province: string): Promise<HardwareStore[]>;
   
@@ -176,31 +167,6 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // Companies
-  async getCompanies(): Promise<Company[]> {
-    return await db.select().from(companies).where(eq(companies.isActive, true)).orderBy(asc(companies.displayName));
-  }
-
-  async getCompany(id: string): Promise<Company | undefined> {
-    const [company] = await db.select().from(companies).where(eq(companies.id, id));
-    return company || undefined;
-  }
-
-  async getCompanyBySlug(slug: string): Promise<Company | undefined> {
-    const [company] = await db.select().from(companies).where(eq(companies.slug, slug));
-    return company || undefined;
-  }
-
-  async createCompany(company: InsertCompany): Promise<Company> {
-    const [newCompany] = await db.insert(companies).values(company).returning();
-    return newCompany;
-  }
-
-  async updateCompany(id: string, company: Partial<InsertCompany>): Promise<Company> {
-    const [updated] = await db.update(companies).set({ ...company, updatedAt: new Date() }).where(eq(companies.id, id)).returning();
-    return updated;
-  }
-
   // Users
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -232,22 +198,18 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getUsersByCompany(companyId: string): Promise<User[]> {
-    return await db.select().from(users).where(and(eq(users.companyId, companyId), eq(users.isActive, true))).orderBy(asc(users.firstName));
-  }
-
   // Products
-  async getProducts(companyId: string): Promise<Product[]> {
-    return await db.select().from(products).where(and(eq(products.companyId, companyId), eq(products.isActive, true))).orderBy(asc(products.category), asc(products.sku));
+  async getProducts(): Promise<Product[]> {
+    return await db.select().from(products).where(eq(products.isActive, true)).orderBy(asc(products.category), asc(products.sku));
   }
 
-  async getProduct(id: string, companyId: string): Promise<Product | undefined> {
-    const [product] = await db.select().from(products).where(and(eq(products.id, id), eq(products.companyId, companyId)));
+  async getProduct(id: string): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.id, id));
     return product || undefined;
   }
 
-  async getProductBySku(sku: string, companyId: string): Promise<Product | undefined> {
-    const [product] = await db.select().from(products).where(and(eq(products.sku, sku), eq(products.companyId, companyId)));
+  async getProductBySku(sku: string): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.sku, sku));
     return product || undefined;
   }
 
@@ -266,20 +228,19 @@ export class DatabaseStorage implements IStorage {
     return newProduct;
   }
 
-  async updateProduct(id: string, product: Partial<InsertProduct>, companyId: string): Promise<Product> {
-    const [updated] = await db.update(products).set(product).where(and(eq(products.id, id), eq(products.companyId, companyId))).returning();
+  async updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product> {
+    const [updated] = await db.update(products).set(product).where(eq(products.id, id)).returning();
     return updated;
   }
 
-  async deleteProduct(id: string, companyId: string): Promise<void> {
-    await db.update(products).set({ isActive: false }).where(and(eq(products.id, id), eq(products.companyId, companyId)));
+  async deleteProduct(id: string): Promise<void> {
+    await db.update(products).set({ isActive: false }).where(eq(products.id, id));
   }
 
-  async searchProducts(query: string, companyId: string): Promise<Product[]> {
+  async searchProducts(query: string): Promise<Product[]> {
     return await db.select().from(products)
       .where(
         and(
-          eq(products.companyId, companyId),
           eq(products.isActive, true),
           or(
             ilike(products.name, `%${query}%`),
@@ -291,11 +252,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Inventory
-  async getInventory(companyId: string): Promise<(Inventory & { product: Product })[]> {
+  async getInventory(): Promise<(Inventory & { product: Product })[]> {
     const result = await db.select()
       .from(inventory)
       .innerJoin(products, eq(inventory.productId, products.id))
-      .where(and(eq(inventory.companyId, companyId), eq(products.isActive, true)));
+      .where(eq(products.isActive, true));
     
     return result.map(row => ({
       ...row.inventory,
@@ -303,26 +264,26 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getInventoryByProduct(productId: string, companyId: string): Promise<Inventory | undefined> {
-    const [inv] = await db.select().from(inventory).where(and(eq(inventory.productId, productId), eq(inventory.companyId, companyId)));
+  async getInventoryByProduct(productId: string): Promise<Inventory | undefined> {
+    const [inv] = await db.select().from(inventory).where(eq(inventory.productId, productId));
     return inv || undefined;
   }
 
-  async updateInventory(productId: string, inventoryUpdate: Partial<InsertInventory>, companyId: string): Promise<Inventory> {
+  async updateInventory(productId: string, inventoryUpdate: Partial<InsertInventory>): Promise<Inventory> {
     const [updated] = await db.update(inventory)
       .set({ ...inventoryUpdate, updatedAt: new Date() })
-      .where(and(eq(inventory.productId, productId), eq(inventory.companyId, companyId)))
+      .where(eq(inventory.productId, productId))
       .returning();
     return updated;
   }
 
   // Distributors
-  async getDistributors(companyId: string): Promise<Distributor[]> {
-    return await db.select().from(distributors).where(eq(distributors.companyId, companyId)).orderBy(asc(distributors.name));
+  async getDistributors(): Promise<Distributor[]> {
+    return await db.select().from(distributors).orderBy(asc(distributors.name));
   }
 
-  async getDistributor(id: string, companyId: string): Promise<Distributor | undefined> {
-    const [distributor] = await db.select().from(distributors).where(and(eq(distributors.id, id), eq(distributors.companyId, companyId)));
+  async getDistributor(id: string): Promise<Distributor | undefined> {
+    const [distributor] = await db.select().from(distributors).where(eq(distributors.id, id));
     return distributor || undefined;
   }
 
@@ -331,21 +292,20 @@ export class DatabaseStorage implements IStorage {
     return newDistributor;
   }
 
-  async updateDistributor(id: string, distributor: Partial<InsertDistributor>, companyId: string): Promise<Distributor> {
-    const [updated] = await db.update(distributors).set(distributor).where(and(eq(distributors.id, id), eq(distributors.companyId, companyId))).returning();
+  async updateDistributor(id: string, distributor: Partial<InsertDistributor>): Promise<Distributor> {
+    const [updated] = await db.update(distributors).set(distributor).where(eq(distributors.id, id)).returning();
     return updated;
   }
 
-  async getDistributorsByRegion(region: string, companyId: string): Promise<Distributor[]> {
-    return await db.select().from(distributors).where(and(eq(distributors.region, region), eq(distributors.companyId, companyId)));
+  async getDistributorsByRegion(region: string): Promise<Distributor[]> {
+    return await db.select().from(distributors).where(eq(distributors.region, region));
   }
 
   // Orders
-  async getOrders(companyId: string): Promise<(Order & { distributor: Distributor })[]> {
+  async getOrders(): Promise<(Order & { distributor: Distributor })[]> {
     const result = await db.select()
       .from(orders)
       .innerJoin(distributors, eq(orders.distributorId, distributors.id))
-      .where(eq(orders.companyId, companyId))
       .orderBy(desc(orders.createdAt));
     
     return result.map(row => ({
@@ -354,11 +314,11 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getOrder(id: string, companyId: string): Promise<(Order & { distributor: Distributor; items: (OrderItem & { product: Product })[] }) | undefined> {
+  async getOrder(id: string): Promise<(Order & { distributor: Distributor; items: (OrderItem & { product: Product })[] }) | undefined> {
     const [order] = await db.select()
       .from(orders)
       .innerJoin(distributors, eq(orders.distributorId, distributors.id))
-      .where(and(eq(orders.id, id), eq(orders.companyId, companyId)));
+      .where(eq(orders.id, id));
 
     if (!order) return undefined;
 
@@ -382,21 +342,20 @@ export class DatabaseStorage implements IStorage {
     return newOrder;
   }
 
-  async updateOrderStatus(id: string, status: string, companyId: string): Promise<Order> {
-    const [updated] = await db.update(orders).set({ status }).where(and(eq(orders.id, id), eq(orders.companyId, companyId))).returning();
+  async updateOrderStatus(id: string, status: string): Promise<Order> {
+    const [updated] = await db.update(orders).set({ status }).where(eq(orders.id, id)).returning();
     return updated;
   }
 
-  async getOrdersByDistributor(distributorId: string, companyId: string): Promise<Order[]> {
-    return await db.select().from(orders).where(and(eq(orders.distributorId, distributorId), eq(orders.companyId, companyId)));
+  async getOrdersByDistributor(distributorId: string): Promise<Order[]> {
+    return await db.select().from(orders).where(eq(orders.distributorId, distributorId));
   }
 
   // Production Schedule
-  async getProductionSchedule(companyId: string): Promise<(ProductionSchedule & { product: Product })[]> {
+  async getProductionSchedule(): Promise<(ProductionSchedule & { product: Product })[]> {
     const result = await db.select()
       .from(productionSchedule)
       .innerJoin(products, eq(productionSchedule.productId, products.id))
-      .where(eq(productionSchedule.companyId, companyId))
       .orderBy(asc(productionSchedule.scheduledDate));
     
     return result.map(row => ({
@@ -410,18 +369,17 @@ export class DatabaseStorage implements IStorage {
     return newSchedule;
   }
 
-  async updateProductionSchedule(id: string, schedule: Partial<InsertProductionSchedule>, companyId: string): Promise<ProductionSchedule> {
-    const [updated] = await db.update(productionSchedule).set(schedule).where(and(eq(productionSchedule.id, id), eq(productionSchedule.companyId, companyId))).returning();
+  async updateProductionSchedule(id: string, schedule: Partial<InsertProductionSchedule>): Promise<ProductionSchedule> {
+    const [updated] = await db.update(productionSchedule).set(schedule).where(eq(productionSchedule.id, id)).returning();
     return updated;
   }
 
-  async getProductionScheduleByDate(startDate: Date, endDate: Date, companyId: string): Promise<(ProductionSchedule & { product: Product })[]> {
+  async getProductionScheduleByDate(startDate: Date, endDate: Date): Promise<(ProductionSchedule & { product: Product })[]> {
     const result = await db.select()
       .from(productionSchedule)
       .innerJoin(products, eq(productionSchedule.productId, products.id))
       .where(
         and(
-          eq(productionSchedule.companyId, companyId),
           gte(productionSchedule.scheduledDate, startDate),
           lte(productionSchedule.scheduledDate, endDate)
         )
@@ -435,16 +393,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Demand Forecast
-  async getDemandForecast(companyId: string, productId?: string, region?: string): Promise<(DemandForecast & { product: Product })[]> {
+  async getDemandForecast(productId?: string, region?: string): Promise<(DemandForecast & { product: Product })[]> {
     let query = db.select()
       .from(demandForecast)
       .innerJoin(products, eq(demandForecast.productId, products.id));
 
-    const conditions = [eq(demandForecast.companyId, companyId)];
+    const conditions = [];
     if (productId) conditions.push(eq(demandForecast.productId, productId));
     if (region) conditions.push(eq(demandForecast.region, region));
 
-    query = query.where(and(...conditions));
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
 
     const result = await query.orderBy(desc(demandForecast.forecastDate));
     
@@ -460,15 +420,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Sales Metrics
-  async getSalesMetrics(companyId: string, startDate?: Date, endDate?: Date, region?: string): Promise<SalesMetrics[]> {
+  async getSalesMetrics(startDate?: Date, endDate?: Date, region?: string): Promise<SalesMetrics[]> {
     let query = db.select().from(salesMetrics);
 
-    const conditions = [eq(salesMetrics.companyId, companyId)];
+    const conditions = [];
     if (startDate) conditions.push(gte(salesMetrics.date, startDate));
     if (endDate) conditions.push(lte(salesMetrics.date, endDate));
     if (region) conditions.push(eq(salesMetrics.region, region));
 
-    query = query.where(and(...conditions));
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
 
     return await query.orderBy(desc(salesMetrics.date));
   }
@@ -478,18 +440,17 @@ export class DatabaseStorage implements IStorage {
     return newMetrics;
   }
 
-  async getSalesMetricsByRegion(companyId: string): Promise<{ region: string; revenue: string; units: number }[]> {
+  async getSalesMetricsByRegion(): Promise<{ region: string; revenue: string; units: number }[]> {
     return await db.select({
       region: salesMetrics.region,
       revenue: sql<string>`sum(${salesMetrics.revenue})`,
       units: sql<number>`sum(${salesMetrics.units})`
     })
     .from(salesMetrics)
-    .where(eq(salesMetrics.companyId, companyId))
     .groupBy(salesMetrics.region);
   }
 
-  async getTopProducts(companyId: string, limit: number = 10): Promise<{ product: Product; revenue: string; units: number }[]> {
+  async getTopProducts(limit: number = 10): Promise<{ product: Product; revenue: string; units: number }[]> {
     return await db.select({
       product: products,
       revenue: sql<string>`sum(${salesMetrics.revenue})`,
@@ -497,15 +458,14 @@ export class DatabaseStorage implements IStorage {
     })
     .from(salesMetrics)
     .innerJoin(products, eq(salesMetrics.productId, products.id))
-    .where(eq(salesMetrics.companyId, companyId))
     .groupBy(products.id)
     .orderBy(desc(sql`sum(${salesMetrics.revenue})`))
     .limit(limit);
   }
 
   // Brands
-  async getBrands(companyId: string): Promise<Brand[]> {
-    return await db.select().from(brands).where(and(eq(brands.companyId, companyId), eq(brands.isActive, true))).orderBy(asc(brands.name));
+  async getBrands(): Promise<Brand[]> {
+    return await db.select().from(brands).where(eq(brands.isActive, true)).orderBy(asc(brands.name));
   }
 
   async createBrand(brand: InsertBrand): Promise<Brand> {
@@ -514,12 +474,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Sales Reps
-  async getSalesReps(companyId: string): Promise<SalesRep[]> {
-    return await db.select().from(salesReps).where(and(eq(salesReps.companyId, companyId), eq(salesReps.isActive, true))).orderBy(asc(salesReps.firstName));
+  async getSalesReps(): Promise<SalesRep[]> {
+    return await db.select().from(salesReps).where(eq(salesReps.isActive, true)).orderBy(asc(salesReps.firstName));
   }
 
-  async getSalesRep(id: string, companyId: string): Promise<SalesRep | undefined> {
-    const [rep] = await db.select().from(salesReps).where(and(eq(salesReps.id, id), eq(salesReps.companyId, companyId)));
+  async getSalesRep(id: string): Promise<SalesRep | undefined> {
+    const [rep] = await db.select().from(salesReps).where(eq(salesReps.id, id));
     return rep || undefined;
   }
 
@@ -529,12 +489,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Hardware Stores
-  async getHardwareStores(companyId: string): Promise<HardwareStore[]> {
-    return await db.select().from(hardwareStores).where(and(eq(hardwareStores.companyId, companyId), eq(hardwareStores.isActive, true))).orderBy(asc(hardwareStores.storeName));
+  async getHardwareStores(): Promise<HardwareStore[]> {
+    return await db.select().from(hardwareStores).where(eq(hardwareStores.isActive, true)).orderBy(asc(hardwareStores.storeName));
   }
 
-  async getHardwareStore(id: string, companyId: string): Promise<HardwareStore | undefined> {
-    const [store] = await db.select().from(hardwareStores).where(and(eq(hardwareStores.id, id), eq(hardwareStores.companyId, companyId)));
+  async getHardwareStore(id: string): Promise<HardwareStore | undefined> {
+    const [store] = await db.select().from(hardwareStores).where(eq(hardwareStores.id, id));
     return store || undefined;
   }
 
