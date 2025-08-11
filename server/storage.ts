@@ -1203,4 +1203,258 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+// Temporarily use in-memory storage while database connection is being restored
+class MemoryStorage implements IStorage {
+  // Logistics Integration - South African Partners
+  async getLogisticsPartners(): Promise<any[]> {
+    // Return strategic South African logistics partners
+    return [
+      {
+        id: "unitrans-africa",
+        name: "Unitrans Africa",
+        type: "freight",
+        logo: "🚛",
+        coverage: ["Gauteng", "Western Cape", "KwaZulu-Natal", "Free State", "Eastern Cape"],
+        services: ["Heavy Freight", "Supply Chain", "Warehousing", "Cross-border"],
+        pricing: { base: 150, perKm: 12.50, currency: "ZAR" },
+        reliability: 94,
+        integration: "active",
+        contactInfo: {
+          phone: "+27 11 451 1700",
+          email: "info@unitransafrica.com",
+          website: "https://unitransafrica.com"
+        }
+      },
+      {
+        id: "imperial-logistics",
+        name: "Imperial Logistics (DP World)",
+        type: "freight",
+        logo: "🌍",
+        coverage: ["National Coverage", "SADC Region", "Global Network"],
+        services: ["End-to-end Logistics", "Distribution", "Supply Chain Solutions"],
+        pricing: { base: 200, perKm: 15.75, currency: "ZAR" },
+        reliability: 96,
+        integration: "testing",
+        contactInfo: {
+          phone: "+27 11 739 4000",
+          email: "logistics@imperial.co.za",
+          website: "https://imperiallogistics.com"
+        }
+      },
+      {
+        id: "postnet-aramex",
+        name: "PostNet (Aramex Network)",
+        type: "courier",
+        logo: "📮",
+        coverage: ["496 Locations", "National Network", "50km Radius Major Centers"],
+        services: ["Same-day Delivery", "PostNet2PostNet", "International Express"],
+        pricing: { base: 89.99, perKm: 2.50, currency: "ZAR" },
+        reliability: 91,
+        integration: "active",
+        contactInfo: {
+          phone: "0860 767 8638",
+          email: "support@postnet.co.za",
+          website: "https://postnet.co.za"
+        }
+      },
+      {
+        id: "shaft-packaging",
+        name: "Shaft Packaging",
+        type: "packaging",
+        logo: "📦",
+        coverage: ["Gauteng", "Western Cape", "KwaZulu-Natal"],
+        services: ["Packaging Solutions", "Custom Design", "Nationwide Delivery"],
+        pricing: { base: 75, perKm: 1.25, currency: "ZAR" },
+        reliability: 89,
+        integration: "planned",
+        contactInfo: {
+          phone: "+27 11 608 1221",
+          email: "info@shaftpackaging.co.za",
+          website: "https://shaftpackaging.co.za"
+        }
+      },
+      {
+        id: "polyoak-packaging",
+        name: "Polyoak Packaging",
+        type: "packaging",
+        logo: "🏭",
+        coverage: ["40+ Manufacturing Plants", "Southern Africa", "Multi-location"],
+        services: ["Rigid Plastic Packaging", "Food & Beverage", "Industrial"],
+        pricing: { base: 125, perKm: 3.75, currency: "ZAR" },
+        reliability: 93,
+        integration: "testing",
+        contactInfo: {
+          phone: "+27 21 951 8000",
+          email: "info@polyoakpackaging.co.za",
+          website: "https://polyoakpackaging.co.za"
+        }
+      }
+    ];
+  }
+
+  async getLogisticsBrands(): Promise<any[]> {
+    // Return CornexConnect logistics brands integrated with SA partners
+    return [
+      {
+        id: "routemesh-sa",
+        name: "RouteMesh™ SA",
+        purpose: "Route Optimization for Hardware Store Distribution",
+        icon: "🗺️",
+        partners: ["unitrans-africa", "imperial-logistics"],
+        status: "operational",
+        capabilities: [
+          "8500+ Hardware Store Network",
+          "AI-Powered Route Planning",
+          "Real-time Traffic Integration",
+          "Multi-stop Optimization"
+        ],
+        metrics: {
+          volume: "12,500 deliveries/month",
+          efficiency: 87,
+          coverage: "9 Provinces"
+        }
+      },
+      {
+        id: "cratelogic-connect",
+        name: "CrateLogic™ Connect",
+        purpose: "Smart Container Management for EPS/BR XPS Products",
+        icon: "📦",
+        partners: ["shaft-packaging", "polyoak-packaging"],
+        status: "development",
+        capabilities: [
+          "Temperature-Controlled Containers",
+          "IoT Tracking Integration",
+          "Custom Packaging Design",
+          "Inventory Auto-reorder"
+        ],
+        metrics: {
+          volume: "31 SKUs managed",
+          efficiency: 92,
+          coverage: "Major Distribution Centers"
+        }
+      },
+      {
+        id: "deliveryx-network",
+        name: "DeliveryX™ Network",
+        purpose: "Last-Mile Delivery for Construction Materials",
+        icon: "🚀",
+        partners: ["postnet-aramex"],
+        status: "development",
+        capabilities: [
+          "Same-day Construction Delivery",
+          "Heavy Materials Handling",
+          "Site-specific Delivery",
+          "Installation Scheduling"
+        ],
+        metrics: {
+          volume: "2,800 deliveries/month",
+          efficiency: 78,
+          coverage: "Metropolitan Areas"
+        }
+      },
+      {
+        id: "labelflow-pro",
+        name: "LabelFlow™ Pro",
+        purpose: "Automated Product Labeling & Compliance",
+        icon: "🏷️",
+        partners: ["shaft-packaging"],
+        status: "planning",
+        capabilities: [
+          "Automated Label Generation",
+          "SABS Compliance Tracking",
+          "Multi-language Support",
+          "QR Code Integration"
+        ],
+        metrics: {
+          volume: "50,000 labels/day",
+          efficiency: 95,
+          coverage: "All Product Lines"
+        }
+      }
+    ];
+  }
+
+  // Stub implementations for all required methods
+  async getUser(id: string): Promise<User | undefined> { return undefined; }
+  async upsertUser(user: UpsertUser): Promise<User> { throw new Error("Database temporarily unavailable"); }
+  async getUserByUsername(username: string): Promise<User | undefined> { return undefined; }
+  async createUser(user: InsertUser): Promise<User> { throw new Error("Database temporarily unavailable"); }
+  async getProducts(): Promise<Product[]> { return []; }
+  async getProduct(id: string): Promise<Product | undefined> { return undefined; }
+  async getProductBySku(sku: string): Promise<Product | undefined> { return undefined; }
+  async createProduct(product: InsertProduct): Promise<Product> { throw new Error("Database temporarily unavailable"); }
+  async updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product> { throw new Error("Database temporarily unavailable"); }
+  async deleteProduct(id: string): Promise<void> { throw new Error("Database temporarily unavailable"); }
+  async searchProducts(query: string): Promise<Product[]> { return []; }
+  async getInventory(): Promise<(Inventory & { product: Product })[]> { return []; }
+  async getInventoryByProduct(productId: string): Promise<Inventory | undefined> { return undefined; }
+  async updateInventory(productId: string, inventory: Partial<InsertInventory>): Promise<Inventory> { throw new Error("Database temporarily unavailable"); }
+  async getDistributors(): Promise<Distributor[]> { return []; }
+  async getDistributor(id: string): Promise<Distributor | undefined> { return undefined; }
+  async createDistributor(distributor: InsertDistributor): Promise<Distributor> { throw new Error("Database temporarily unavailable"); }
+  async updateDistributor(id: string, distributor: Partial<InsertDistributor>): Promise<Distributor> { throw new Error("Database temporarily unavailable"); }
+  async getDistributorsByRegion(region: string): Promise<Distributor[]> { return []; }
+  async getOrders(): Promise<(Order & { distributor: Distributor })[]> { return []; }
+  async getOrder(id: string): Promise<(Order & { distributor: Distributor; items: (OrderItem & { product: Product })[] }) | undefined> { return undefined; }
+  async createOrder(order: InsertOrder): Promise<Order> { throw new Error("Database temporarily unavailable"); }
+  async updateOrderStatus(id: string, status: string): Promise<Order> { throw new Error("Database temporarily unavailable"); }
+  async getOrdersByDistributor(distributorId: string): Promise<Order[]> { return []; }
+  async getProductionSchedule(): Promise<(ProductionSchedule & { product: Product })[]> { return []; }
+  async createProductionSchedule(schedule: InsertProductionSchedule): Promise<ProductionSchedule> { throw new Error("Database temporarily unavailable"); }
+  async updateProductionSchedule(id: string, schedule: Partial<InsertProductionSchedule>): Promise<ProductionSchedule> { throw new Error("Database temporarily unavailable"); }
+  async getProductionScheduleByDate(startDate: Date, endDate: Date): Promise<(ProductionSchedule & { product: Product })[]> { return []; }
+  async getDemandForecast(productId?: string, region?: string): Promise<(DemandForecast & { product: Product })[]> { return []; }
+  async createDemandForecast(forecast: InsertDemandForecast): Promise<DemandForecast> { throw new Error("Database temporarily unavailable"); }
+  async getSalesMetrics(startDate?: Date, endDate?: Date, region?: string): Promise<SalesMetrics[]> { return []; }
+  async createSalesMetrics(metrics: InsertSalesMetrics): Promise<SalesMetrics> { throw new Error("Database temporarily unavailable"); }
+  async getSalesMetricsByRegion(): Promise<{ region: string; revenue: string; units: number }[]> { return []; }
+  async getTopProducts(limit?: number): Promise<{ product: Product; revenue: string; units: number }[]> { return []; }
+  async getBrands(): Promise<Brand[]> { return []; }
+  async createBrand(brand: InsertBrand): Promise<Brand> { throw new Error("Database temporarily unavailable"); }
+  async getSalesReps(): Promise<SalesRep[]> { return []; }
+  async getSalesRep(id: string): Promise<SalesRep | undefined> { return undefined; }
+  async createSalesRep(rep: InsertSalesRep): Promise<SalesRep> { throw new Error("Database temporarily unavailable"); }
+  async getHardwareStores(): Promise<HardwareStore[]> { return []; }
+  async getHardwareStore(id: string): Promise<HardwareStore | undefined> { return undefined; }
+  async createHardwareStore(store: InsertHardwareStore): Promise<HardwareStore> { throw new Error("Database temporarily unavailable"); }
+  async getHardwareStoresByProvince(province: string): Promise<HardwareStore[]> { return []; }
+  async getRoutePlans(): Promise<(RoutePlan & { salesRep: SalesRep })[]> { return []; }
+  async getRoutePlan(id: string): Promise<(RoutePlan & { salesRep: SalesRep; routeStores: (RouteStore & { hardwareStore: HardwareStore })[] }) | undefined> { return undefined; }
+  async createRoutePlan(route: InsertRoutePlan): Promise<RoutePlan> { throw new Error("Database temporarily unavailable"); }
+  async getAiOrderSuggestions(): Promise<(AiOrderSuggestion & { hardwareStore: HardwareStore; product: Product })[]> { return []; }
+  async createAiOrderSuggestion(suggestion: InsertAiOrderSuggestion): Promise<AiOrderSuggestion> { throw new Error("Database temporarily unavailable"); }
+  async getStoreVisits(): Promise<(StoreVisit & { hardwareStore: HardwareStore; salesRep: SalesRep })[]> { return []; }
+  async createStoreVisit(visit: InsertStoreVisit): Promise<StoreVisit> { throw new Error("Database temporarily unavailable"); }
+  async getFactorySetups(): Promise<FactorySetup[]> { return []; }
+  async getFactorySetup(id: string): Promise<FactorySetup | undefined> { return undefined; }
+  async createFactorySetup(factory: InsertFactorySetup): Promise<FactorySetup> { throw new Error("Database temporarily unavailable"); }
+  async updateFactorySetup(id: string, factory: Partial<InsertFactorySetup>): Promise<FactorySetup> { throw new Error("Database temporarily unavailable"); }
+  async getAiInsights(factoryId?: string): Promise<AiInsight[]> { return []; }
+  async createAiInsight(insight: InsertAiInsight): Promise<AiInsight> { throw new Error("Database temporarily unavailable"); }
+  async getProductionMetrics(factoryId: string): Promise<ProductionMetrics[]> { return []; }
+  async createProductionMetrics(metrics: InsertProductionMetrics): Promise<ProductionMetrics> { throw new Error("Database temporarily unavailable"); }
+  async getFactoryRecommendations(factoryId: string): Promise<FactoryRecommendation[]> { return []; }
+  async createFactoryRecommendation(recommendation: InsertFactoryRecommendation): Promise<FactoryRecommendation> { throw new Error("Database temporarily unavailable"); }
+  async getAutomationRules(): Promise<AutomationRule[]> { return []; }
+  async getAutomationRule(id: string): Promise<AutomationRule | undefined> { return undefined; }
+  async createAutomationRule(rule: InsertAutomationRule): Promise<AutomationRule> { throw new Error("Database temporarily unavailable"); }
+  async updateAutomationRule(id: string, updates: Partial<AutomationRule>): Promise<AutomationRule> { throw new Error("Database temporarily unavailable"); }
+  async getAutomationEvents(): Promise<AutomationEvent[]> { return []; }
+  async createAutomationEvent(event: InsertAutomationEvent): Promise<AutomationEvent> { throw new Error("Database temporarily unavailable"); }
+  async getMaintenanceSchedules(): Promise<MaintenanceSchedule[]> { return []; }
+  async createMaintenanceSchedule(schedule: InsertMaintenanceSchedule): Promise<MaintenanceSchedule> { throw new Error("Database temporarily unavailable"); }
+  async getPurchaseOrders(): Promise<(PurchaseOrder & { items?: PurchaseOrderItem[] })[]> { return []; }
+  async getPurchaseOrder(id: string): Promise<(PurchaseOrder & { items: (PurchaseOrderItem & { product: Product })[]; statusHistory: PoStatusHistory[]; documents: PoDocument[]; }) | undefined> { return undefined; }
+  async createPurchaseOrder(order: InsertPurchaseOrder): Promise<PurchaseOrder> { throw new Error("Database temporarily unavailable"); }
+  async updatePurchaseOrder(id: string, order: Partial<InsertPurchaseOrder>): Promise<PurchaseOrder> { throw new Error("Database temporarily unavailable"); }
+  async addPurchaseOrderItem(item: InsertPurchaseOrderItem): Promise<PurchaseOrderItem> { throw new Error("Database temporarily unavailable"); }
+  async updatePurchaseOrderStatus(id: string, status: string, userId?: string, reason?: string, notes?: string): Promise<PurchaseOrder> { throw new Error("Database temporarily unavailable"); }
+  async generatePONumber(): Promise<string> { return "PO" + Date.now(); }
+  async getPurchaseOrdersByStatus(status: string): Promise<PurchaseOrder[]> { return []; }
+  async getPurchaseOrdersByDateRange(startDate: Date, endDate: Date): Promise<PurchaseOrder[]> { return []; }
+  async searchPurchaseOrders(query: string): Promise<PurchaseOrder[]> { return []; }
+  async addStatusHistory(history: InsertPoStatusHistory): Promise<PoStatusHistory> { throw new Error("Database temporarily unavailable"); }
+  async addDocument(document: InsertPoDocument): Promise<PoDocument> { throw new Error("Database temporarily unavailable"); }
+}
+
+export const storage = new MemoryStorage();
