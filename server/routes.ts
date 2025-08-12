@@ -43,16 +43,16 @@ function detectExcelStructure(sampleRows: any[]): any {
     storeType: null
   };
 
-  // Common column name patterns
+  // Common column name patterns - expanded for your Excel files
   const patterns: Record<string, string[]> = {
-    storeName: ['STORE NAME', 'Store Name', 'Name', 'CUSTOMER NAME', 'Business Name', 'Shop Name'],
-    address: ['STREET ADDRESS', 'Address', 'Street Address', 'Physical Address', 'Location'],
-    city: ['CITY', 'City', 'AREA', 'Area', 'Town', 'TOWN'],
-    province: ['PROVINCE', 'Province', 'Region', 'State'],
-    contactPerson: ['CUSTOMER NAME', 'Contact Name', 'Contact Person', 'Manager', 'Owner'],
-    phone: ['CUSTOMER NUMBER', 'Phone', 'Telephone', 'Cell', 'Mobile', 'Contact Number'],
-    email: ['EMAIL', 'Email', 'E-mail', 'Email Address'],
-    storeType: ['GROUP', 'Type', 'Store Type', 'Category', 'TYPE OF CLIENT', 'Classification']
+    storeName: ['STORE NAME', 'Store Name', 'Name', 'CUSTOMER NAME', 'Business Name', 'Shop Name', 'SHOP', 'Company Name', 'Store', 'Client Name'],
+    address: ['STREET ADDRESS', 'Address', 'Street Address', 'Physical Address', 'Location', 'STREET', 'Full Address', 'Site Address'],
+    city: ['CITY', 'City', 'AREA', 'Area', 'Town', 'TOWN', 'Location', 'Place', 'Municipality'],
+    province: ['PROVINCE', 'Province', 'Region', 'State', 'REGION', 'PROV'],
+    contactPerson: ['CUSTOMER NAME', 'Contact Name', 'Contact Person', 'Manager', 'Owner', 'CONTACT', 'Representative', 'Person'],
+    phone: ['CUSTOMER NUMBER', 'Phone', 'Telephone', 'Cell', 'Mobile', 'Contact Number', 'TEL', 'PHONE', 'Number', 'Cell Number'],
+    email: ['EMAIL', 'Email', 'E-mail', 'Email Address', 'MAIL', 'E_MAIL'],
+    storeType: ['GROUP', 'Type', 'Store Type', 'Category', 'TYPE OF CLIENT', 'Classification', 'CLIENT TYPE', 'Business Type']
   };
 
   // Detect columns from first row (headers)
@@ -78,18 +78,44 @@ function detectExcelStructure(sampleRows: any[]): any {
 function extractStoreData(row: any, columns: any, rowIndex: number): any {
   if (!row || typeof row !== 'object') return null;
 
-  const storeName = row[columns.storeName] || row['STORE NAME'] || row['Name'] || row['CUSTOMER NAME'];
-  if (!storeName || storeName.toString().trim() === '') return null;
+  // Try all possible column variations for store name
+  const possibleStoreNames = ['STORE NAME', 'Store Name', 'Name', 'CUSTOMER NAME', 'Business Name', 'Shop Name', 'SHOP', 'Company Name', 'Store', 'Client Name'];
+  let storeName = row[columns.storeName];
+  
+  if (!storeName) {
+    for (const key of Object.keys(row)) {
+      if (possibleStoreNames.some(pattern => key.toUpperCase().includes(pattern.toUpperCase()))) {
+        storeName = row[key];
+        break;
+      }
+    }
+  }
+
+  if (!storeName || storeName.toString().trim() === '' || storeName.toString().trim().toUpperCase() === 'STORE NAME') return null;
+
+  // Enhanced extraction with fallback logic
+  const getFieldValue = (field: string, fallbacks: string[]) => {
+    let value = row[columns[field]];
+    if (!value) {
+      for (const fallback of fallbacks) {
+        if (row[fallback]) {
+          value = row[fallback];
+          break;
+        }
+      }
+    }
+    return value ? value.toString().trim() : '';
+  };
 
   return {
     storeName: storeName.toString().trim(),
-    address: (row[columns.address] || row['STREET ADDRESS'] || row['Address'] || '').toString(),
-    city: (row[columns.city] || row['CITY'] || row['AREA'] || row['Town'] || '').toString(),
-    province: (row[columns.province] || row['PROVINCE'] || row['Region'] || 'Unknown').toString(),
-    contactPerson: (row[columns.contactPerson] || row['CUSTOMER NAME'] || row['Contact Name'] || '').toString(),
-    phone: (row[columns.phone] || row['CUSTOMER NUMBER'] || row['Phone'] || '').toString(),
-    email: row[columns.email] || row['EMAIL'] || row['Email'] || null,
-    storeType: (row[columns.storeType] || row['GROUP'] || row['Type'] || 'hardware').toString()
+    address: getFieldValue('address', ['STREET ADDRESS', 'Address', 'Street Address', 'Physical Address', 'Location', 'STREET', 'Full Address']),
+    city: getFieldValue('city', ['CITY', 'City', 'AREA', 'Area', 'Town', 'TOWN', 'Location', 'Place', 'Municipality']),
+    province: getFieldValue('province', ['PROVINCE', 'Province', 'Region', 'State', 'REGION', 'PROV']) || 'Unknown',
+    contactPerson: getFieldValue('contactPerson', ['CUSTOMER NAME', 'Contact Name', 'Contact Person', 'Manager', 'Owner', 'CONTACT', 'Representative']),
+    phone: getFieldValue('phone', ['CUSTOMER NUMBER', 'Phone', 'Telephone', 'Cell', 'Mobile', 'Contact Number', 'TEL', 'PHONE', 'Number']),
+    email: row[columns.email] || row['EMAIL'] || row['Email'] || row['E-mail'] || null,
+    storeType: getFieldValue('storeType', ['GROUP', 'Type', 'Store Type', 'Category', 'TYPE OF CLIENT', 'Classification', 'CLIENT TYPE']) || 'hardware'
   };
 }
 
