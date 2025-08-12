@@ -1178,7 +1178,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/bulk-import/session/:id", async (req, res) => {
     try {
-      const session = await storage.getBulkImportSession(req.params.id);
+      console.log("[BULK IMPORT] Fetching session:", req.params.id);
+      const [session] = await db.select().from(bulkImportSessions).where(eq(bulkImportSessions.id, req.params.id));
+      console.log("[BULK IMPORT] Session found:", !!session);
       if (!session) {
         return res.status(404).json({ error: "Session not found" });
       }
@@ -1191,7 +1193,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/bulk-import/status/:id", async (req, res) => {
     try {
-      const session = await storage.getBulkImportSession(req.params.id);
+      console.log("[BULK IMPORT] Status request for:", req.params.id);
+      if (!req.params.id || req.params.id === 'undefined') {
+        console.log("[BULK IMPORT] Invalid session ID");
+        return res.status(400).json({ error: "Invalid session ID" });
+      }
+      
+      const [session] = await db.select().from(bulkImportSessions).where(eq(bulkImportSessions.id, req.params.id));
+      console.log("[BULK IMPORT] Status session found:", !!session);
       if (!session) {
         return res.status(404).json({ error: "Session not found" });
       }
@@ -1202,6 +1211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: session.status,
         processedFiles: session.processedFiles,
         totalFiles: session.totalFiles,
+        totalImported: session.totalImported,
         files: session.files || []
       });
     } catch (error) {
