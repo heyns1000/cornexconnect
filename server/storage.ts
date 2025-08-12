@@ -1414,6 +1414,8 @@ class MemoryStorage implements IStorage {
   
   // In-memory storage arrays
   private users: User[] = [];
+  private products: Product[] = [];
+  private brands: Brand[] = [];
   private hardwareStores: HardwareStore[] = [];
   private bulkImportSessions: BulkImportSession[] = [];
   
@@ -1444,13 +1446,55 @@ class MemoryStorage implements IStorage {
     console.log(`[Storage] Added hardware store: ${newStore.address}, ${newStore.city}. Total stores: ${this.hardwareStores.length}`);
     return newStore;
   }
-  async getProducts(): Promise<Product[]> { return []; }
-  async getProduct(id: string): Promise<Product | undefined> { return undefined; }
-  async getProductBySku(sku: string): Promise<Product | undefined> { return undefined; }
-  async createProduct(product: InsertProduct): Promise<Product> { throw new Error("Database temporarily unavailable"); }
-  async updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product> { throw new Error("Database temporarily unavailable"); }
-  async deleteProduct(id: string): Promise<void> { throw new Error("Database temporarily unavailable"); }
-  async searchProducts(query: string): Promise<Product[]> { return []; }
+  async getProducts(): Promise<Product[]> { 
+    return this.products.filter(p => p.isActive);
+  }
+
+  async getProduct(id: string): Promise<Product | undefined> { 
+    return this.products.find(p => p.id === id);
+  }
+
+  async getProductBySku(sku: string): Promise<Product | undefined> { 
+    return this.products.find(p => p.sku === sku);
+  }
+
+  async createProduct(product: InsertProduct): Promise<Product> { 
+    const newProduct: Product = {
+      id: `product_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...product,
+      isActive: product.isActive !== undefined ? product.isActive : true,
+      createdAt: new Date(),
+    };
+    this.products.push(newProduct);
+    console.log(`[Storage] Created product: ${newProduct.sku} - ${newProduct.name}. Total products: ${this.products.length}`);
+    return newProduct;
+  }
+
+  async updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product> { 
+    const index = this.products.findIndex(p => p.id === id);
+    if (index === -1) throw new Error("Product not found");
+    
+    this.products[index] = { ...this.products[index], ...product };
+    return this.products[index];
+  }
+
+  async deleteProduct(id: string): Promise<void> { 
+    const index = this.products.findIndex(p => p.id === id);
+    if (index !== -1) {
+      this.products[index].isActive = false;
+    }
+  }
+
+  async searchProducts(query: string): Promise<Product[]> { 
+    const lowQuery = query.toLowerCase();
+    return this.products.filter(p => 
+      p.isActive && (
+        p.name.toLowerCase().includes(lowQuery) ||
+        p.sku.toLowerCase().includes(lowQuery) ||
+        (p.description && p.description.toLowerCase().includes(lowQuery))
+      )
+    );
+  }
   async getInventory(): Promise<(Inventory & { product: Product })[]> { return []; }
   async getInventoryByProduct(productId: string): Promise<Inventory | undefined> { return undefined; }
   async updateInventory(productId: string, inventory: Partial<InsertInventory>): Promise<Inventory> { throw new Error("Database temporarily unavailable"); }
@@ -1474,7 +1518,10 @@ class MemoryStorage implements IStorage {
   async createSalesMetrics(metrics: InsertSalesMetrics): Promise<SalesMetrics> { throw new Error("Database temporarily unavailable"); }
   async getSalesMetricsByRegion(): Promise<{ region: string; revenue: string; units: number }[]> { return []; }
   async getTopProducts(limit?: number): Promise<{ product: Product; revenue: string; units: number }[]> { return []; }
-  async getBrands(): Promise<Brand[]> { return []; }
+  async getBrands(): Promise<Brand[]> { 
+    return this.brands.filter(b => b.isActive);
+  }
+
   async createBrand(brand: InsertBrand): Promise<Brand> { 
     const newBrand: Brand = {
       id: `brand_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -1486,6 +1533,8 @@ class MemoryStorage implements IStorage {
       color: brand.color,
       icon: brand.icon || null
     };
+    this.brands.push(newBrand);
+    console.log(`[Storage] Created brand: ${newBrand.displayName}. Total brands: ${this.brands.length}`);
     return newBrand;
   }
   async getSalesReps(): Promise<SalesRep[]> { return []; }
