@@ -1623,11 +1623,11 @@ class MemoryStorage implements IStorage {
   }
 
   async getHardwareStoresExcel(): Promise<any[]> { 
-    return [];
+    return this.hardwareStores;
   }
 
   async getHardwareStoresFromExcel(): Promise<any[]> { 
-    return [];
+    return this.hardwareStores;
   }
 }
 
