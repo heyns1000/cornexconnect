@@ -1625,6 +1625,10 @@ class MemoryStorage implements IStorage {
   async getHardwareStoresExcel(): Promise<any[]> { 
     return [];
   }
+
+  async getHardwareStoresFromExcel(): Promise<any[]> { 
+    return [];
+  }
 }
 
 export const storage = new MemoryStorage();
