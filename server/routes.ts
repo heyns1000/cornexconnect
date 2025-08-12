@@ -1711,7 +1711,7 @@ const addBulkImportRoutes = (app: Express) => {
         }))
       };
 
-      importSessions.set(sessionId, session);
+      await storage.createBulkImportSession(session);
 
       // Process files asynchronously
       processFilesAsync(sessionId, files);
@@ -1727,7 +1727,7 @@ const addBulkImportRoutes = (app: Express) => {
   app.get("/api/bulk-import/status/:sessionId", async (req, res) => {
     try {
       const sessionId = req.params.sessionId;
-      const session = importSessions.get(sessionId);
+      const session = await storage.getBulkImportSession(sessionId);
       
       if (!session) {
         return res.status(404).json({ error: "Session not found" });
@@ -1743,10 +1743,7 @@ const addBulkImportRoutes = (app: Express) => {
   // Get import history
   app.get("/api/bulk-import/history", async (req, res) => {
     try {
-      const history = Array.from(importSessions.values())
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 10); // Return last 10 sessions
-
+      const history = await storage.getBulkImportSessions();
       res.json(history);
     } catch (error) {
       console.error("History fetch error:", error);
@@ -1758,7 +1755,7 @@ const addBulkImportRoutes = (app: Express) => {
   app.get("/api/bulk-import/session/:sessionId", async (req, res) => {
     try {
       const sessionId = req.params.sessionId;
-      const session = importSessions.get(sessionId);
+      const session = await storage.getBulkImportSession(sessionId);
       
       if (!session) {
         return res.status(404).json({ error: "Session not found" });
@@ -1774,7 +1771,7 @@ const addBulkImportRoutes = (app: Express) => {
 
 // Async file processing function
 const processFilesAsync = async (sessionId: string, files: Express.Multer.File[]) => {
-  const session = importSessions.get(sessionId);
+  let session = await storage.getBulkImportSession(sessionId);
   if (!session) return;
 
   try {
@@ -1787,6 +1784,7 @@ const processFilesAsync = async (sessionId: string, files: Express.Multer.File[]
       // Update file status to processing
       session.files[i].status = "processing";
       session.files[i].progress = 0;
+      await storage.updateBulkImportSession(sessionId, session);
 
       try {
         const result = await processImportFile(file);
@@ -1794,6 +1792,7 @@ const processFilesAsync = async (sessionId: string, files: Express.Multer.File[]
         // Update progress during processing
         for (let progress = 10; progress <= 90; progress += 20) {
           session.files[i].progress = progress;
+          await storage.updateBulkImportSession(sessionId, session);
           await new Promise(resolve => setTimeout(resolve, 100)); // Simulate processing time
         }
 
@@ -1819,6 +1818,7 @@ const processFilesAsync = async (sessionId: string, files: Express.Multer.File[]
         };
 
         session.processedFiles++;
+        await storage.updateBulkImportSession(sessionId, session);
 
       } catch (error) {
         console.error(`Failed to process file: ${file.originalname}`, error);
@@ -1830,17 +1830,22 @@ const processFilesAsync = async (sessionId: string, files: Express.Multer.File[]
           preview: []
         };
         session.processedFiles++;
+        await storage.updateBulkImportSession(sessionId, session);
       }
     }
 
     // Update session status
     session.status = session.files.every(f => f.status === "completed") ? "completed" : "failed";
     session.totalImported = totalImported;
+    await storage.updateBulkImportSession(sessionId, session);
 
     console.log(`Bulk import session ${sessionId} completed. Imported ${totalImported} hardware stores.`);
 
   } catch (error) {
     console.error(`Session ${sessionId} failed:`, error);
-    session.status = "failed";
+    if (session) {
+      session.status = "failed";
+      await storage.updateBulkImportSession(sessionId, session);
+    }
   }
 };

@@ -164,6 +164,12 @@ export interface IStorage {
   // Logistics Integration (SA Partners)
   getLogisticsPartners(): Promise<any[]>;
   getLogisticsBrands(): Promise<any[]>;
+
+  // Bulk Import Sessions
+  getBulkImportSessions(): Promise<any[]>;
+  getBulkImportSession(sessionId: string): Promise<any | undefined>;
+  createBulkImportSession(session: any): Promise<any>;
+  updateBulkImportSession(sessionId: string, session: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1408,6 +1414,7 @@ class MemoryStorage implements IStorage {
   // In-memory storage arrays
   private users: User[] = [];
   private hardwareStores: HardwareStore[] = [];
+  private bulkImportSessions: any[] = [];
   
   async createHardwareStore(store: InsertHardwareStore): Promise<HardwareStore> {
     const newStore: HardwareStore = {
@@ -1486,6 +1493,29 @@ class MemoryStorage implements IStorage {
   async getHardwareStores(): Promise<HardwareStore[]> { 
     console.log(`[Storage] Retrieved ${this.hardwareStores.length} hardware stores from memory`);
     return this.hardwareStores; 
+  }
+
+  // Bulk Import Sessions
+  async getBulkImportSessions(): Promise<any[]> {
+    return this.bulkImportSessions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 10);
+  }
+
+  async getBulkImportSession(sessionId: string): Promise<any | undefined> {
+    return this.bulkImportSessions.find(session => session.id === sessionId);
+  }
+
+  async createBulkImportSession(session: any): Promise<any> {
+    this.bulkImportSessions.push(session);
+    return session;
+  }
+
+  async updateBulkImportSession(sessionId: string, updates: any): Promise<any> {
+    const index = this.bulkImportSessions.findIndex(session => session.id === sessionId);
+    if (index !== -1) {
+      this.bulkImportSessions[index] = { ...this.bulkImportSessions[index], ...updates };
+      return this.bulkImportSessions[index];
+    }
+    throw new Error(`Session ${sessionId} not found`);
   }
   async getHardwareStore(id: string): Promise<HardwareStore | undefined> { 
     return this.hardwareStores.find(store => store.id === id);
