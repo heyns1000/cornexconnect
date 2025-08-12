@@ -190,7 +190,7 @@ export default function AuditTrail() {
                     <SelectValue placeholder="All actions" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Actions</SelectItem>
+                    <SelectItem value="all">All Actions</SelectItem>
                     <SelectItem value="create">Create</SelectItem>
                     <SelectItem value="read">Read</SelectItem>
                     <SelectItem value="update">Update</SelectItem>
@@ -208,7 +208,7 @@ export default function AuditTrail() {
                     <SelectValue placeholder="All users" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Users</SelectItem>
+                    <SelectItem value="all">All Users</SelectItem>
                     <SelectItem value="homemart_admin_001">HOMEMART ADMIN</SelectItem>
                   </SelectContent>
                 </Select>
@@ -221,7 +221,7 @@ export default function AuditTrail() {
                     <SelectValue placeholder="All resources" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Resources</SelectItem>
+                    <SelectItem value="all">All Resources</SelectItem>
                     <SelectItem value="Authentication">Authentication</SelectItem>
                     <SelectItem value="Company Settings">Company Settings</SelectItem>
                     <SelectItem value="User Management">User Management</SelectItem>

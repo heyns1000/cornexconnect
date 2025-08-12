@@ -22,13 +22,17 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  role: text("role").notNull().default("viewer"), // admin, manager, distributor, viewer
+  role: text("role").notNull().default("viewer"), // admin, manager, staff, viewer
+  department: text("department"),
+  phone: text("phone"),
   region: text("region"),
   currency: text("currency").default("ZAR"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+
 
 export const products = pgTable("products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

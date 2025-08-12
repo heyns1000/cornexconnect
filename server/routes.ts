@@ -1434,6 +1434,164 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add bulk import routes
   addBulkImportRoutes(app);
 
+  // User Management endpoints - DATABASE INTEGRATION
+  app.get('/api/users', async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+
+  app.post('/api/users', async (req, res) => {
+    try {
+      const newUser = await storage.createUser({
+        email: req.body.email,
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        role: req.body.role || 'viewer',
+        department: req.body.department,
+        phone: req.body.phone,
+        region: req.body.region,
+        currency: req.body.currency || 'ZAR'
+      });
+      
+      await storage.createAuditLog({
+        userId: 'homemart_admin_001',
+        action: 'create',
+        details: `Created new user: ${newUser.email}`,
+        ipAddress: req.ip || '127.0.0.1',
+        userAgent: req.get('User-Agent') || 'Unknown'
+      });
+      
+      console.log('[API] Created user in database:', newUser.email);
+      res.json(newUser);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      res.status(500).json({ error: 'Failed to create user' });
+    }
+  });
+
+  app.put('/api/users/:id', async (req, res) => {
+    try {
+      const updatedUser = await storage.updateUser(req.params.id, req.body);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      await storage.createAuditLog({
+        userId: 'homemart_admin_001',
+        action: 'update',
+        details: `Updated user: ${updatedUser.email}`,
+        ipAddress: req.ip || '127.0.0.1',
+        userAgent: req.get('User-Agent') || 'Unknown'
+      });
+      
+      console.log('[API] Updated user in database:', req.params.id);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      res.status(500).json({ error: 'Failed to update user' });
+    }
+  });
+
+  app.delete('/api/users/:id', async (req, res) => {
+    try {
+      const success = await storage.deleteUser(req.params.id);
+      
+      if (!success) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      await storage.createAuditLog({
+        userId: 'homemart_admin_001',
+        action: 'delete',
+        details: `Deleted user: ${req.params.id}`,
+        ipAddress: req.ip || '127.0.0.1',
+        userAgent: req.get('User-Agent') || 'Unknown'
+      });
+      
+      console.log('[API] Deleted user from database:', req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ error: 'Failed to delete user' });
+    }
+  });
+
+  // Company Settings endpoints - DATABASE INTEGRATION
+  app.get('/api/company-settings', async (req, res) => {
+    try {
+      const settings = await storage.getCompanySettings();
+      if (!settings) {
+        const initialSettings = await storage.updateCompanySettings({
+          companyName: 'HOMEMART AFRICA',
+          companyRegistration: '2022/854581/07',
+          contactEmail: 'info@homemart.co.za',
+          phone: '+27 11 555 0000',
+          address: '123 Industrial Drive',
+          city: 'Johannesburg',
+          province: 'Gauteng',
+          country: 'South Africa',
+          postalCode: '2000',
+          vatNumber: '9169062271',
+          creditLimit: '500000.00',
+          paymentTerms: '30_days',
+          businessType: 'distributor'
+        });
+        res.json(initialSettings);
+      } else {
+        res.json(settings);
+      }
+    } catch (error) {
+      console.error('Error fetching company settings:', error);
+      res.status(500).json({ error: 'Failed to fetch company settings' });
+    }
+  });
+
+  app.put('/api/company-settings', async (req, res) => {
+    try {
+      const updatedSettings = await storage.updateCompanySettings(req.body);
+      
+      await storage.createAuditLog({
+        userId: 'homemart_admin_001',
+        action: 'update',
+        details: `Updated company settings: ${updatedSettings.companyName}`,
+        ipAddress: req.ip || '127.0.0.1',
+        userAgent: req.get('User-Agent') || 'Unknown'
+      });
+      
+      console.log('[API] Company settings updated in database:', updatedSettings.companyName);
+      res.json(updatedSettings);
+    } catch (error) {
+      console.error('Error updating company settings:', error);
+      res.status(500).json({ error: 'Failed to update company settings' });
+    }
+  });
+
+  // Audit Trail endpoints - DATABASE INTEGRATION
+  app.get('/api/audit-logs/:filters?', async (req, res) => {
+    try {
+      let filters = {};
+      try {
+        filters = req.params.filters && req.params.filters !== '[object Object]' 
+          ? JSON.parse(decodeURIComponent(req.params.filters)) 
+          : {};
+      } catch (e) {
+        filters = {};
+      }
+      
+      const auditLogs = await storage.getAuditLogs(filters);
+      res.json(auditLogs);
+    } catch (error) {
+      console.error('Error fetching audit logs:', error);
+      res.status(500).json({ error: 'Failed to fetch audit logs' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

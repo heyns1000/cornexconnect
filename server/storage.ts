@@ -6,6 +6,7 @@ import {
   automationRules, automationEvents, maintenanceSchedules,
   excelUploads, hardwareStoresFromExcel, salesRepRoutesFromExcel,
   purchaseOrders, purchaseOrderItems, poStatusHistory, poDocuments,
+  companySettings, userAuditTrail,
   type User, type InsertUser, type UpsertUser, type Product, type InsertProduct,
   type Inventory, type InsertInventory, type Distributor, type InsertDistributor,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
@@ -30,12 +31,26 @@ import {
   type PurchaseOrderItem, type InsertPurchaseOrderItem,
   type PoStatusHistory, type InsertPoStatusHistory,
   type PoDocument, type InsertPoDocument,
-  type BulkImportSession, type InsertBulkImportSession
+  type BulkImportSession, type InsertBulkImportSession,
+  type CompanySettings, type InsertCompanySettings,
+  type UserAuditTrail, type InsertUserAuditTrail
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, and, gte, lte, ilike, or } from "drizzle-orm";
 
 export interface IStorage {
+  // Company Settings (Database-first implementation)
+  getCompanySettings(): Promise<CompanySettings | undefined>;
+  updateCompanySettings(settings: Partial<InsertCompanySettings>): Promise<CompanySettings>;
+  
+  // User Management (Database-first implementation)  
+  getAllUsers(): Promise<User[]>;
+  updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
+  
+  // Audit Trail (Database-first implementation)
+  getAuditLogs(filters?: any): Promise<UserAuditTrail[]>;
+  createAuditLog(log: InsertUserAuditTrail): Promise<UserAuditTrail>;
   // Users (Replit Auth compatible)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
@@ -1783,6 +1798,96 @@ class MemoryStorage implements IStorage {
   async syncRouteToMainDirectory(route: any): Promise<void> {
     console.log(`[Storage] Syncing route ${route.id} to main directory`);
   }
+
+  // Company Settings - Database Integration
+  async getCompanySettings(): Promise<CompanySettings | undefined> {
+    const [settings] = await db.select().from(companySettings).limit(1);
+    return settings || undefined;
+  }
+
+  async updateCompanySettings(settingsUpdate: Partial<InsertCompanySettings>): Promise<CompanySettings> {
+    // Try to update existing settings first
+    const existing = await this.getCompanySettings();
+    
+    if (existing) {
+      const [updated] = await db.update(companySettings)
+        .set({ ...settingsUpdate, updatedAt: new Date() })
+        .where(eq(companySettings.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      // Create new settings if none exist (for Homemart Africa)
+      const [created] = await db.insert(companySettings).values({
+        userId: "homemart_admin_001",
+        companyName: "HOMEMART AFRICA",
+        companyRegistration: "2022/854581/07",
+        contactEmail: "admin@homemart.co.za",
+        phone: "+27 11 555 0000",
+        address: "123 Industrial Drive",
+        city: "Johannesburg",
+        province: "Gauteng",
+        country: "South Africa",
+        postalCode: "2000",
+        vatNumber: "9169062271",
+        creditLimit: "500000.00",
+        paymentTerms: "30_days",
+        businessType: "distributor",
+        ...settingsUpdate,
+      }).returning();
+      return created;
+    }
+  }
+  
+  // User Management - Database Integration
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(asc(users.firstName), asc(users.lastName));
+  }
+
+  async updateUser(id: string, userUpdate: Partial<InsertUser>): Promise<User | undefined> {
+    const [updated] = await db.update(users)
+      .set({ ...userUpdate, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    try {
+      await db.update(users)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(users.id, id));
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+  
+  // Audit Trail - Database Integration
+  async getAuditLogs(filters?: any): Promise<UserAuditTrail[]> {
+    let query = db.select().from(userAuditTrail);
+    
+    if (filters?.userId) {
+      query = query.where(eq(userAuditTrail.userId, filters.userId));
+    }
+    if (filters?.action) {
+      query = query.where(eq(userAuditTrail.action, filters.action));
+    }
+    if (filters?.dateFrom && filters.dateTo) {
+      query = query.where(
+        and(
+          gte(userAuditTrail.timestamp, filters.dateFrom),
+          lte(userAuditTrail.timestamp, filters.dateTo)
+        )
+      );
+    }
+    
+    return await query.orderBy(desc(userAuditTrail.timestamp)).limit(1000);
+  }
+
+  async createAuditLog(log: InsertUserAuditTrail): Promise<UserAuditTrail> {
+    const [created] = await db.insert(userAuditTrail).values(log).returning();
+    return created;
+  }
 }
 
-export const storage = new MemoryStorage();
+export const storage = new DatabaseStorage();
