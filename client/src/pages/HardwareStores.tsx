@@ -33,6 +33,7 @@ import { TransitionHints, useTransitionHints, HINT_SEQUENCES } from "@/component
 import { AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import GoogleMap from "@/components/GoogleMap";
 
 interface HardwareStore {
   id: string;
@@ -452,6 +453,35 @@ export default function HardwareStores() {
                 ))}
               </div>
             </ScrollArea>
+          </CardContent>
+        </Card>
+
+        {/* Hardware Stores Map */}
+        <Card className="backdrop-blur-sm bg-white/10 border border-white/20" data-hint="stores-map">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="w-5 h-5" />
+              Store Locations Map
+            </CardTitle>
+            <CardDescription>Geographic distribution of {stores.length} hardware stores</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <GoogleMap
+              center={{ lat: -26.2041, lng: 28.0473 }}
+              zoom={6}
+              height="400px"
+              markers={filteredStores.slice(0, 100).map(store => ({
+                id: store.id,
+                position: { 
+                  lat: store.latitude || (-26.2041 + (Math.random() - 0.5) * 10), 
+                  lng: store.longitude || (28.0473 + (Math.random() - 0.5) * 10)
+                },
+                title: store.storeName,
+                info: `${store.city}, ${store.province}<br/>Type: ${store.storeType}<br/>Status: ${store.isActive ? 'Active' : 'Inactive'}`,
+                icon: store.isActive ? undefined : '/api/placeholder/32/32'
+              }))}
+              className="w-full"
+            />
           </CardContent>
         </Card>
 

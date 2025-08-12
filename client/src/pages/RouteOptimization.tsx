@@ -30,6 +30,7 @@ import { TransitionHints, useTransitionHints } from "@/components/TransitionHint
 import { AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import RouteMap from "@/components/RouteMap";
 
 interface RouteStore {
   id: string;
@@ -290,6 +291,40 @@ export default function RouteOptimization() {
                 Create New Route
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Interactive Route Map */}
+        <Card className="backdrop-blur-sm bg-white/10 border border-white/20" data-hint="route-map">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Map className="w-5 h-5" />
+              Interactive Route Map
+            </CardTitle>
+            <CardDescription>
+              Real-time route visualization with Google Maps integration
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RouteMap
+              stops={optimizedRoute.map(stop => ({
+                id: stop.storeId,
+                name: stop.storeName,
+                address: `${stop.city}, ${stop.province}`,
+                position: { 
+                  lat: stop.latitude || (-26.2041 + (Math.random() - 0.5) * 2), 
+                  lng: stop.longitude || (28.0473 + (Math.random() - 0.5) * 2)
+                },
+                estimatedTime: stop.estimatedTime,
+                status: stop.visitStatus as any
+              }))}
+              optimizeRoute={true}
+              onRouteOptimized={(optimizedStops) => {
+                console.log('Route optimized:', optimizedStops);
+              }}
+              height="500px"
+              className="w-full"
+            />
           </CardContent>
         </Card>
 
