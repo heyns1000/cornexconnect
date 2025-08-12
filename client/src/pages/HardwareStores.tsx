@@ -413,9 +413,9 @@ export default function HardwareStores() {
 
                       <div className="mt-3 pt-3 border-t border-white/10">
                         <div className="flex items-center justify-between text-xs">
-                          <span>Credit: {formatCurrency(store.creditLimit)}</span>
+                          <span>Credit: {store.creditLimit ? formatCurrency(parseFloat(store.creditLimit)) : 'Not Set'}</span>
                           <span className="text-green-600">
-                            {formatCurrency(store.performance.monthlyRevenue)}/mo
+                            {store.performance?.monthlyRevenue ? formatCurrency(store.performance.monthlyRevenue) : 'R0'}/mo
                           </span>
                         </div>
                         <div className="mt-2">

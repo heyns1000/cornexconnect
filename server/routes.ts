@@ -1682,6 +1682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/users', async (req, res) => {
     try {
       const newUser = await storage.createUser({
+        id: req.body.id || undefined, // Let database generate if not provided
         email: req.body.email,
         firstName: req.body.firstName,
         lastName: req.body.lastName,
@@ -1689,7 +1690,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         department: req.body.department,
         phone: req.body.phone,
         region: req.body.region,
-        currency: req.body.currency || 'ZAR'
+        currency: req.body.currency || 'ZAR',
+        isActive: true
       });
       
       await storage.createAuditLog({

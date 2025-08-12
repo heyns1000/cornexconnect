@@ -59,6 +59,7 @@ export interface IStorage {
   
   // User Management (Database-first implementation)  
   getAllUsers(): Promise<User[]>;
+  createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
   
@@ -2094,7 +2095,7 @@ class MemoryStorage implements IStorage {
   
   // User Management - Database Integration
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users).orderBy(asc(users.firstName), asc(users.lastName));
+    return await db.select().from(users).where(eq(users.isActive, true)).orderBy(asc(users.firstName), asc(users.lastName));
   }
 
   async updateUser(id: string, userUpdate: Partial<InsertUser>): Promise<User | undefined> {
@@ -2139,7 +2140,14 @@ class MemoryStorage implements IStorage {
   }
 
   async createAuditLog(log: InsertUserAuditTrail): Promise<UserAuditTrail> {
-    const [created] = await db.insert(userAuditTrail).values(log).returning();
+    const [created] = await db.insert(userAuditTrail).values({
+      userId: log.userId,
+      action: log.action,
+      details: log.details,
+      ipAddress: log.ipAddress || '127.0.0.1',
+      userAgent: log.userAgent || 'Unknown',
+      timestamp: new Date()
+    }).returning();
     return created;
   }
 
