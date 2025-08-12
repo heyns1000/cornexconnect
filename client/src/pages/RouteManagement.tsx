@@ -526,17 +526,63 @@ export default function RouteManagement() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12 text-gray-500">
-                  <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium mb-2">{(hardwareStores as any[])?.length?.toLocaleString() || '2,684'} Hardware Stores Ready to Load</h3>
-                  <p className="text-gray-400 mb-4">
-                    Your complete hardware store database will be available once you upload the Excel route files.
-                  </p>
-                  <Button variant="outline">
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload Route Files to View Stores
-                  </Button>
-                </div>
+                {storesLoading ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-gray-500 mt-4">Loading hardware stores...</p>
+                  </div>
+                ) : (hardwareStores as any[])?.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="text-sm text-gray-600 mb-4">
+                      Showing {(hardwareStores as any[])?.length?.toLocaleString()} hardware stores across South Africa
+                    </div>
+                    <div className="max-h-96 overflow-y-auto space-y-2">
+                      {(hardwareStores as any[])
+                        ?.filter((store: any) => 
+                          !searchTerm || 
+                          store.storeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          store.province?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          store.city?.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        ?.slice(0, 50)
+                        ?.map((store: any, index: number) => (
+                        <div key={store.id || index} className="border rounded-lg p-3 hover:bg-gray-50">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium text-sm">{store.storeName}</h4>
+                              <p className="text-xs text-gray-500">
+                                {store.city}, {store.province}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <Badge variant="outline" className="text-xs">
+                                {store.storeType || 'Hardware Store'}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {(hardwareStores as any[])?.filter((store: any) => 
+                      !searchTerm || 
+                      store.storeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      store.province?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      store.city?.toLowerCase().includes(searchTerm.toLowerCase())
+                    )?.length > 50 && (
+                      <p className="text-sm text-gray-500 text-center mt-4">
+                        Showing first 50 results. Use search to filter stores.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                    <h3 className="text-lg font-medium mb-2">No Hardware Stores Found</h3>
+                    <p className="text-gray-400 mb-4">
+                      No hardware store data is available at the moment.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
