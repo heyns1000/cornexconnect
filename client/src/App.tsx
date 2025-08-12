@@ -25,6 +25,9 @@ import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import CompanySettings from "@/pages/CompanySettings";
+import UserManagement from "@/pages/UserManagement";
+import InventoryUpload from "@/pages/InventoryUpload";
+import AuditTrail from "@/pages/AuditTrail";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import { FruitfulAssistChatbot, FruitfulAssistFloatingButton } from "@/components/FruitfulAssistChatbot";
@@ -84,6 +87,9 @@ function Router() {
             <Route path="/logistics" component={LogisticsIntegration} />
             <Route path="/company-management" component={CompanyManagement} />
             <Route path="/company-settings" component={CompanySettings} />
+            <Route path="/user-management" component={UserManagement} />
+            <Route path="/inventory-upload" component={InventoryUpload} />
+            <Route path="/audit-trail" component={AuditTrail} />
             <Route path="/brands/:id" component={BrandDetail} />
           </Switch>
         </PageTransition>
