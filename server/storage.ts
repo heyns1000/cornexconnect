@@ -2098,6 +2098,11 @@ class MemoryStorage implements IStorage {
     return await db.select().from(users).where(eq(users.isActive, true)).orderBy(asc(users.firstName), asc(users.lastName));
   }
 
+  async createUser(userData: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(userData).returning();
+    return user;
+  }
+
   async updateUser(id: string, userUpdate: Partial<InsertUser>): Promise<User | undefined> {
     const [updated] = await db.update(users)
       .set({ ...userUpdate, updatedAt: new Date() })
