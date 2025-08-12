@@ -20,6 +20,7 @@ import ExcelUpload from "@/pages/ExcelUpload";
 import BulkImport from "@/pages/BulkImport";
 import HardwareStores from "@/pages/HardwareStores";
 import LogisticsIntegration from "@/pages/LogisticsIntegration";
+import CompanyManagement from "@/pages/CompanyManagement";
 import Landing from "@/pages/Landing";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
@@ -71,6 +72,7 @@ function Router() {
         <Route path="/bulk-import" component={BulkImport} />
         <Route path="/hardware-stores" component={HardwareStores} />
         <Route path="/logistics" component={LogisticsIntegration} />
+        <Route path="/company-management" component={CompanyManagement} />
         <Route path="/brands/:id" component={BrandDetail} />
       </Switch>
     </PageTransition>

@@ -1416,6 +1416,7 @@ class MemoryStorage implements IStorage {
   private users: User[] = [];
   private products: Product[] = [];
   private brands: Brand[] = [];
+  private distributors: Distributor[] = [];
   private hardwareStores: HardwareStore[] = [];
   private bulkImportSessions: BulkImportSession[] = [];
   
@@ -1498,9 +1499,29 @@ class MemoryStorage implements IStorage {
   async getInventory(): Promise<(Inventory & { product: Product })[]> { return []; }
   async getInventoryByProduct(productId: string): Promise<Inventory | undefined> { return undefined; }
   async updateInventory(productId: string, inventory: Partial<InsertInventory>): Promise<Inventory> { throw new Error("Database temporarily unavailable"); }
-  async getDistributors(): Promise<Distributor[]> { return []; }
+  async getDistributors(): Promise<Distributor[]> { 
+    return this.distributors.filter(d => d.isActive);
+  }
   async getDistributor(id: string): Promise<Distributor | undefined> { return undefined; }
-  async createDistributor(distributor: InsertDistributor): Promise<Distributor> { throw new Error("Database temporarily unavailable"); }
+  async createDistributor(distributor: InsertDistributor): Promise<Distributor> {
+    const newDistributor: Distributor = {
+      id: `distributor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...distributor,
+      status: distributor.status || 'active',
+      tier: distributor.tier || 'premium',
+      creditLimit: distributor.creditLimit || "100000.00",
+      currentBalance: distributor.currentBalance || "0.00",
+      lastOrderDate: distributor.lastOrderDate || null,
+      totalOrders: distributor.totalOrders || 0,
+      avgOrderValue: distributor.avgOrderValue || null,
+      isActive: distributor.isActive !== undefined ? distributor.isActive : true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.distributors.push(newDistributor);
+    console.log(`[Storage] Created distributor: ${newDistributor.name}. Total distributors: ${this.distributors.length}`);
+    return newDistributor;
+  }
   async updateDistributor(id: string, distributor: Partial<InsertDistributor>): Promise<Distributor> { throw new Error("Database temporarily unavailable"); }
   async getDistributorsByRegion(region: string): Promise<Distributor[]> { return []; }
   async getOrders(): Promise<(Order & { distributor: Distributor })[]> { return []; }

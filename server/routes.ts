@@ -349,6 +349,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/distributors", isAuthenticated, async (req, res) => {
+    try {
+      console.log("Creating distributor with data:", req.body);
+      const distributorData = insertDistributorSchema.parse(req.body);
+      console.log("Parsed distributor data:", distributorData);
+      const distributor = await storage.createDistributor(distributorData);
+      console.log("Created distributor:", distributor);
+      res.status(201).json(distributor);
+    } catch (error) {
+      console.error("Error creating distributor:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create distributor", error: error.message });
+    }
+  });
+
   app.post("/api/distributors", async (req, res) => {
     try {
       const validatedData = insertDistributorSchema.parse(req.body);
@@ -1305,6 +1322,25 @@ async function initializeSampleData() {
 
     // Sample distributors
     const sampleDistributors = [
+      {
+        name: "HOMEMART AFRICA",
+        contactPerson: "SCHOEMAN HEYNS",
+        email: "KATRYNCC@GMAIL.COM",
+        phone: "0814159468",
+        address: "40 ZANIE STREET, NEWPARK ESTATE, HAZELDEAN",
+        city: "HAZELDEAN",
+        region: "GAUTENG",
+        country: "South Africa",
+        currency: "ZAR",
+        status: "active",
+        tier: "premium",
+        creditLimit: "500000.00",
+        paymentTerms: "NET30",
+        brands: ["TrimStyle™", "DesignAura™", "CorniceCraft™", "CeilingTech™"],
+        taxNumber: "9169062271",
+        registrationNumber: "2022/854581/07",
+        commissionRate: "15.00"
+      },
       {
         name: "BuildMart Johannesburg",
         contactPerson: "Michael van der Merwe",
