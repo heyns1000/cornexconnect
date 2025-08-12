@@ -1375,12 +1375,30 @@ class MemoryStorage implements IStorage {
   }
 
   // Stub implementations for all required methods  
-  async getUser(id: string): Promise<User | undefined> { return undefined; }
-  async upsertUser(user: UpsertUser): Promise<User> { throw new Error("Database temporarily unavailable"); }
+  async getUser(id: string): Promise<User | undefined> { 
+    return this.users.find(u => u.id === id);
+  }
+  async upsertUser(user: UpsertUser): Promise<User> { 
+    const existingIndex = this.users.findIndex(u => u.id === user.id);
+    const newUser: User = {
+      ...user,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    if (existingIndex >= 0) {
+      this.users[existingIndex] = { ...this.users[existingIndex], ...newUser };
+      return this.users[existingIndex];
+    } else {
+      this.users.push(newUser);
+      return newUser;
+    }
+  }
   async getUserByUsername(username: string): Promise<User | undefined> { return undefined; }
   async createUser(user: InsertUser): Promise<User> { throw new Error("Database temporarily unavailable"); }
   
-  // Hardware stores with in-memory storage for bulk import
+  // In-memory storage arrays
+  private users: User[] = [];
   private hardwareStores: HardwareStore[] = [];
   
   async createHardwareStore(store: InsertHardwareStore): Promise<HardwareStore> {
