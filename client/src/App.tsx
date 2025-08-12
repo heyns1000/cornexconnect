@@ -64,40 +64,32 @@ function Router() {
     );
   }
 
-  // Show authenticated app with sidebar and smooth transitions
+  // Show authenticated app routes only (layout handled by AuthenticatedApp)
   return (
-    <div className="flex h-screen bg-gradient-to-br from-emerald-50 to-blue-50">
-      <Sidebar />
-      <div className="flex-1 overflow-auto">
-        <PageTransition>
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/catalog" component={ProductCatalog} />
-            <Route path="/production" component={ProductionPlanning} />
-            <Route path="/inventory" component={InventoryAI} />
-            <Route path="/distributors" component={GlobalDistributors} />
-            <Route path="/analytics" component={BusinessIntelligence} />
-            <Route path="/routes" component={RouteManagement} />
-            <Route path="/purchase-orders" component={PurchaseOrders} />
-            <Route path="/factory-setup" component={FactorySetup} />
-            <Route path="/automation" component={ExtendedAutomation} />
-            <Route path="/excel-upload" component={ExcelUpload} />
-            <Route path="/bulk-import" component={BulkImport} />
-            <Route path="/hardware-stores" component={HardwareStores} />
-            <Route path="/logistics" component={LogisticsIntegration} />
-            <Route path="/company-management" component={CompanyManagement} />
-            <Route path="/company-settings" component={CompanySettings} />
-            <Route path="/user-management" component={UserManagement} />
-            <Route path="/inventory-upload" component={InventoryUpload} />
-            <Route path="/audit-trail" component={AuditTrail} />
-            <Route path="/brands/:id" component={BrandDetail} />
-          </Switch>
-        </PageTransition>
-      </div>
-      
-      {/* Floating chatbot for demo */}
-      <FruitfulAssistFloatingButton onClick={() => {}} isOpen={false} />
-    </div>
+    <PageTransition>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/catalog" component={ProductCatalog} />
+        <Route path="/production" component={ProductionPlanning} />
+        <Route path="/inventory" component={InventoryAI} />
+        <Route path="/distributors" component={GlobalDistributors} />
+        <Route path="/analytics" component={BusinessIntelligence} />
+        <Route path="/routes" component={RouteManagement} />
+        <Route path="/purchase-orders" component={PurchaseOrders} />
+        <Route path="/factory-setup" component={FactorySetup} />
+        <Route path="/automation" component={ExtendedAutomation} />
+        <Route path="/excel-upload" component={ExcelUpload} />
+        <Route path="/bulk-import" component={BulkImport} />
+        <Route path="/hardware-stores" component={HardwareStores} />
+        <Route path="/logistics" component={LogisticsIntegration} />
+        <Route path="/company-management" component={CompanyManagement} />
+        <Route path="/company-settings" component={CompanySettings} />
+        <Route path="/user-management" component={UserManagement} />
+        <Route path="/inventory-upload" component={InventoryUpload} />
+        <Route path="/audit-trail" component={AuditTrail} />
+        <Route path="/brands/:id" component={BrandDetail} />
+      </Switch>
+    </PageTransition>
   );
 }
 
@@ -139,11 +131,8 @@ function AppContent() {
     );
   }
 
-  if (isAuthenticated) {
-    return <AuthenticatedApp />;
-  }
-
-  return <Router />;
+  // Always use AuthenticatedApp in demo mode (bypasses authentication)
+  return <AuthenticatedApp />;
 }
 
 function App() {
