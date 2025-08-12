@@ -6,7 +6,7 @@ import {
   automationRules, automationEvents, maintenanceSchedules,
   excelUploads, hardwareStoresFromExcel, salesRepRoutesFromExcel,
   purchaseOrders, purchaseOrderItems, poStatusHistory, poDocuments,
-  companySettings, userAuditTrail,
+  companySettings, userAuditTrail, bulkImportSessions,
   type User, type InsertUser, type UpsertUser, type Product, type InsertProduct,
   type Inventory, type InsertInventory, type Distributor, type InsertDistributor,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,

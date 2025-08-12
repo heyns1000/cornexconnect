@@ -25,6 +25,9 @@ import { z } from "zod";
 import multer from "multer";
 import * as XLSX from "xlsx";
 import path from "path";
+import { db } from "./db";
+import { bulkImportSessions } from "@shared/schema";
+import { desc, eq } from "drizzle-orm";
 
 // Configure multer for bulk file uploads
 const bulkUpload = multer({
@@ -1007,7 +1010,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/bulk-import/process", upload.array('files', 50), async (req, res) => {
+  app.post("/api/bulk-import/upload", bulkUpload.array('files', 50), async (req, res) => {
     try {
       console.log("Processing bulk import with files:", req.files?.length || 0);
       
@@ -1017,17 +1020,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create import session
       const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const session = await storage.createImportSession({
+      // Create session directly in database with required name field
+      const [session] = await db.insert(bulkImportSessions).values({
         id: sessionId,
-        name: `Import Session ${new Date().toLocaleString()}`,
+        name: `Bulk Import ${new Date().toISOString()}`,
         totalFiles: req.files.length,
         processedFiles: 0,
-        status: "active",
-        createdAt: new Date().toISOString(),
-        files: []
-      });
+        totalImported: 0,
+        status: "pending",
+        files: [],
+        createdAt: new Date()
+      }).returning();
 
       const processedFiles = [];
+      let totalImported = 0;
 
       // Process each file
       for (const file of req.files) {
@@ -1036,7 +1042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const fileId = `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
           
-          // Add file to session
+          // Add file to session tracking (in memory for now)
           const importFile = {
             id: fileId,
             name: file.originalname,
@@ -1044,8 +1050,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             progress: 0,
             result: null
           };
-
-          await storage.addFileToImportSession(sessionId, importFile);
 
           // Process Excel file
           const workbook = XLSX.read(file.buffer, { type: 'buffer' });
@@ -1064,10 +1068,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const row = jsonData[i];
             
             try {
-              // Detect if this is hardware store data
-              const storeData = await storage.processHardwareStoreRow(row, file.originalname);
-              if (storeData) {
+              // Process hardware store data directly
+              if (row.storeName || row.name || row.store_name) {
+                const storeToCreate = {
+                  storeCode: row.storeCode || row.id || `store_${Date.now()}_${i}`,
+                  storeName: row.storeName || row.name || row.store_name || `Store ${i + 1}`,
+                  address: row.address || '',
+                  contactPerson: row.contactPerson || row.contact_person || '',
+                  phone: row.phone || '',
+                  email: row.email || null,
+                  province: row.province || 'Unknown',
+                  city: row.city || '',
+                  creditLimit: row.creditLimit || '0.00',
+                  storeType: row.storeType || 'hardware',
+                  isActive: row.isActive !== false
+                };
+
+                await storage.createHardwareStore(storeToCreate);
                 validRows++;
+                totalImported++;
               }
             } catch (rowError) {
               console.error(`Error processing row ${i + 1}:`, rowError);
@@ -1075,17 +1094,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
-          // Update file with results
-          await storage.updateFileInImportSession(sessionId, fileId, {
-            status: "completed",
-            progress: 100,
-            result: {
-              totalRows,
-              validRows,
-              errors,
-              preview: jsonData.slice(0, 5) // First 5 rows as preview
-            }
-          });
+          // File processing completed (tracking in memory for now)
+          importFile.status = "completed";
+          importFile.progress = 100;
+          importFile.result = {
+            totalRows,
+            validRows,
+            errors,
+            preview: jsonData.slice(0, 5) // First 5 rows as preview
+          };
 
           processedFiles.push({
             id: fileId,
@@ -1099,16 +1116,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (fileError) {
           console.error(`Error processing file ${file.originalname}:`, fileError);
           
-          await storage.updateFileInImportSession(sessionId, fileId, {
-            status: "error",
-            progress: 0,
-            result: {
-              totalRows: 0,
-              validRows: 0,
-              errors: [fileError.message],
-              preview: []
-            }
-          });
+          // File processing failed (tracking in memory for now)
+          importFile.status = "error";
+          importFile.progress = 0;
+          importFile.result = {
+            totalRows: 0,
+            validRows: 0,
+            errors: [fileError.message],
+            preview: []
+          };
 
           processedFiles.push({
             id: fileId,
@@ -1121,11 +1137,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Update session as completed
-      await storage.updateImportSession(sessionId, {
+      // Update session as completed directly in database
+      await db.update(bulkImportSessions).set({
         processedFiles: req.files.length,
-        status: "completed"
-      });
+        status: "completed",
+        totalImported,
+        updatedAt: new Date()
+      }).where(eq(bulkImportSessions.id, sessionId));
 
       console.log(`Bulk import completed: ${processedFiles.length} files processed`);
 
@@ -1144,7 +1162,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/bulk-import/history", async (req, res) => {
     try {
-      const sessions = await storage.getImportSessions();
+      console.log("[BULK IMPORT] History route called");
+      console.log("[BULK IMPORT] Storage keys:", Object.getOwnPropertyNames(storage));
+      console.log("[BULK IMPORT] Storage prototype keys:", Object.getOwnPropertyNames(Object.getPrototypeOf(storage)));
+      
+      // Query database directly for bulk import sessions
+      const sessions = await db.select().from(bulkImportSessions).orderBy(desc(bulkImportSessions.createdAt)).limit(10);
+      console.log("[BULK IMPORT] Retrieved", sessions.length, "sessions from database");
       res.json(sessions);
     } catch (error) {
       console.error("Error fetching import history:", error);
@@ -1154,7 +1178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/bulk-import/session/:id", async (req, res) => {
     try {
-      const session = await storage.getImportSession(req.params.id);
+      const session = await storage.getBulkImportSession(req.params.id);
       if (!session) {
         return res.status(404).json({ error: "Session not found" });
       }
@@ -1167,7 +1191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/bulk-import/status/:id", async (req, res) => {
     try {
-      const session = await storage.getImportSession(req.params.id);
+      const session = await storage.getBulkImportSession(req.params.id);
       if (!session) {
         return res.status(404).json({ error: "Session not found" });
       }
@@ -2454,8 +2478,8 @@ const processFilesAsync = async (sessionId: string, files: Express.Multer.File[]
             
             // Ensure required fields are present
             const storeToCreate = {
-              id: storeData.id || `store_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-              name: storeData.name || `Imported Store ${j + 1}`,
+              storeCode: storeData.id || `store_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              storeName: storeData.name || `Imported Store ${j + 1}`,
               address: storeData.address || '',
               contactPerson: storeData.contactPerson || '',
               phone: storeData.phone || '',
@@ -2464,13 +2488,12 @@ const processFilesAsync = async (sessionId: string, files: Express.Multer.File[]
               city: storeData.city || '',
               creditLimit: storeData.creditLimit || '0.00',
               storeType: storeData.storeType || 'hardware',
-              isActive: storeData.isActive !== false,
-              createdAt: new Date()
+              isActive: storeData.isActive !== false
             };
 
             const createdStore = await storage.createHardwareStore(storeToCreate);
-            console.log(`[BULK IMPORT] Successfully created store: ${createdStore.name}`);
-            totalImported++;
+            console.log(`[BULK IMPORT] Successfully created store: ${createdStore.storeName}`);
+            validRows++;
           } catch (error) {
             console.error(`[BULK IMPORT] Failed to import store: ${storeData.name || 'Unknown'}`, error);
             result.errors.push(`Failed to import store: ${storeData.name || 'Unknown'} - ${error.message}`);
