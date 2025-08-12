@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+// import { setupAuth, isAuthenticated } from "./replitAuth"; // DISABLED FOR DEMO
 import { 
   insertProductSchema, 
   insertDistributorSchema, 
@@ -225,8 +225,8 @@ const processImportFile = async (file: Express.Multer.File): Promise<{
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup Replit Authentication
-  await setupAuth(app);
+  // Setup Replit Authentication - DISABLED FOR DEMO
+  // await setupAuth(app);
 
   // Initialize sample data
   await initializeSampleData();
@@ -252,7 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Company Settings routes
-  app.get('/api/company-settings', isAuthenticated, async (req: any, res) => {
+  app.get('/api/company-settings', async (req: any, res) => {
     try {
       // Return Homemart Africa's company settings for the demo
       const companySettings = {
@@ -279,7 +279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/company-settings', isAuthenticated, async (req: any, res) => {
+  app.put('/api/company-settings', async (req: any, res) => {
     try {
       // For demo purposes, just return the updated settings
       const updatedSettings = req.body;
@@ -391,7 +391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/distributors", isAuthenticated, async (req, res) => {
+  app.post("/api/distributors", async (req, res) => {
     try {
       console.log("Creating distributor with data:", req.body);
       const distributorData = insertDistributorSchema.parse(req.body);
@@ -1267,7 +1267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Purchase Order System Routes
-  app.get("/api/purchase-orders", isAuthenticated, async (req, res) => {
+  app.get("/api/purchase-orders", async (req, res) => {
     try {
       const status = req.query.status as string;
       const startDate = req.query.startDate as string;
@@ -1292,7 +1292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/purchase-orders/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/purchase-orders/:id", async (req, res) => {
     try {
       const { id } = req.params;
       const order = await storage.getPurchaseOrder(id);
@@ -1308,7 +1308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/purchase-orders", isAuthenticated, async (req: any, res) => {
+  app.post("/api/purchase-orders", async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub;
       const validatedData = insertPurchaseOrderSchema.parse({
@@ -1324,7 +1324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/purchase-orders/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/purchase-orders/:id", async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = insertPurchaseOrderSchema.partial().parse(req.body);
@@ -1337,7 +1337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/purchase-orders/:id/status", isAuthenticated, async (req: any, res) => {
+  app.patch("/api/purchase-orders/:id/status", async (req: any, res) => {
     try {
       const { id } = req.params;
       const { status, reason, notes } = req.body;
@@ -1351,7 +1351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/purchase-orders/:id/items", isAuthenticated, async (req, res) => {
+  app.post("/api/purchase-orders/:id/items", async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = insertPurchaseOrderItemSchema.parse({
@@ -1367,7 +1367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/purchase-orders/:id/documents", isAuthenticated, async (req: any, res) => {
+  app.post("/api/purchase-orders/:id/documents", async (req: any, res) => {
     try {
       const { id } = req.params;
       const userId = req.user?.claims?.sub;
@@ -1385,7 +1385,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/purchase-orders/generate-po-number", isAuthenticated, async (req, res) => {
+  app.get("/api/purchase-orders/generate-po-number", async (req, res) => {
     try {
       const poNumber = await storage.generatePONumber();
       res.json({ poNumber });
@@ -1434,7 +1434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add bulk import routes
   addBulkImportRoutes(app);
 
-  // User Management endpoints - DATABASE INTEGRATION
+  // User Management endpoints - DATABASE INTEGRATION (NO AUTH FOR DEMO)
   app.get('/api/users', async (req, res) => {
     try {
       const users = await storage.getAllUsers();
@@ -1522,7 +1522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Company Settings endpoints - DATABASE INTEGRATION
+  // Company Settings endpoints - DATABASE INTEGRATION (NO AUTH FOR DEMO)
   app.get('/api/company-settings', async (req, res) => {
     try {
       const settings = await storage.getCompanySettings();
@@ -1572,7 +1572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Audit Trail endpoints - DATABASE INTEGRATION
+  // Audit Trail endpoints - DATABASE INTEGRATION (NO AUTH FOR DEMO) 
   app.get('/api/audit-logs/:filters?', async (req, res) => {
     try {
       let filters = {};
