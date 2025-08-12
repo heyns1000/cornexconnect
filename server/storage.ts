@@ -1381,7 +1381,15 @@ class MemoryStorage implements IStorage {
   async upsertUser(user: UpsertUser): Promise<User> { 
     const existingIndex = this.users.findIndex(u => u.id === user.id);
     const newUser: User = {
-      ...user,
+      id: user.id || `user_${Date.now()}`,
+      email: user.email || null,
+      firstName: user.firstName || null,
+      lastName: user.lastName || null,
+      profileImageUrl: user.profileImageUrl || null,
+      role: user.role || 'viewer',
+      region: user.region || null,
+      currency: user.currency || null,
+      isActive: user.isActive !== undefined ? user.isActive : true,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -1404,9 +1412,25 @@ class MemoryStorage implements IStorage {
   async createHardwareStore(store: InsertHardwareStore): Promise<HardwareStore> {
     const newStore: HardwareStore = {
       id: `store_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      ...store,
+      email: store.email || null,
+      isActive: store.isActive !== undefined ? store.isActive : true,
       createdAt: new Date(),
-      updatedAt: new Date()
+      contactPerson: store.contactPerson || null,
+      phone: store.phone || null,
+      address: store.address,
+      city: store.city,
+      province: store.province,
+      postalCode: store.postalCode || null,
+      gpsCoordinates: store.gpsCoordinates || null,
+      storeSize: store.storeSize || null,
+      creditLimit: store.creditLimit || null,
+      paymentTerms: store.paymentTerms || null,
+      salesRepId: store.salesRepId || null,
+      visitFrequency: store.visitFrequency || null,
+      lastOrderDate: store.lastOrderDate || null,
+      totalOrders: store.totalOrders || 0,
+      avgOrderValue: store.avgOrderValue || null,
+      lastVisitDate: store.lastVisitDate || null
     };
     this.hardwareStores.push(newStore);
     return newStore;
@@ -1445,9 +1469,13 @@ class MemoryStorage implements IStorage {
   async createBrand(brand: InsertBrand): Promise<Brand> { 
     const newBrand: Brand = {
       id: `brand_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      ...brand,
+      name: brand.name,
+      isActive: brand.isActive !== undefined ? brand.isActive : true,
       createdAt: new Date(),
-      updatedAt: new Date()
+      description: brand.description || null,
+      displayName: brand.displayName,
+      color: brand.color,
+      icon: brand.icon || null
     };
     return newBrand;
   }
