@@ -1,306 +1,352 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, Cpu, Globe, RotateCw, RefreshCw } from "lucide-react";
-import { motion } from "framer-motion";
-import MetricCard from "@/components/MetricCard";
-import DemandChart from "@/components/DemandChart";
-import ProductionSchedule from "@/components/ProductionSchedule";
-import DistributorMap from "@/components/DistributorMap";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useSimulatedMetrics } from "@/hooks/useRealTimeData";
-import { formatCurrency } from "@/lib/currency";
-import { CORNEX_BRANDS } from "@/lib/constants";
-import { Link } from "wouter";
+import { Progress } from "@/components/ui/progress";
+import { 
+  TrendingUp, 
+  Users, 
+  Package, 
+  DollarSign, 
+  Factory,
+  MapPin,
+  BarChart3,
+  Lightbulb
+} from "lucide-react";
+import { PageTransition } from "@/components/PageTransition";
+import { TransitionHints, useTransitionHints, HINT_SEQUENCES } from "@/components/TransitionHints";
+import { AnimatePresence } from "framer-motion";
 
 export default function Dashboard() {
-  const metrics = useSimulatedMetrics();
+  const [showWelcomeHints, setShowWelcomeHints] = useState(true);
   
+  // Transition hints system
+  const { 
+    activeHints, 
+    isVisible: hintsVisible, 
+    currentStep, 
+    showHints, 
+    hideHints, 
+    completeHints 
+  } = useTransitionHints();
+
+  // Dashboard data queries
   const { data: summary } = useQuery({
     queryKey: ["/api/dashboard/summary"],
+  });
+
+  const { data: distributors } = useQuery({
+    queryKey: ["/api/distributors"],
+  });
+
+  const { data: regionalSales } = useQuery({
+    queryKey: ["/api/sales-metrics/by-region"],
   });
 
   const { data: topProducts } = useQuery({
     queryKey: ["/api/sales-metrics/top-products"],
   });
 
+  const { data: productionSchedule } = useQuery({
+    queryKey: ["/api/production-schedule"],
+  });
+
+  const { data: demandForecast } = useQuery({
+    queryKey: ["/api/demand-forecast"],
+  });
+
+  // Show welcome hints on first visit
+  const startDashboardTour = () => {
+    showHints(HINT_SEQUENCES.dashboard);
+  };
+
+  const skipDashboardTour = () => {
+    setShowWelcomeHints(false);
+    hideHints();
+  };
+
+  // Format currency for display
+  const formatCurrency = (value: string | number) => {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    return new Intl.NumberFormat('en-ZA', {
+      style: 'currency',
+      currency: 'ZAR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(num);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-      <div className="space-y-8 p-8">
-        {/* Page Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl px-8 py-6 card-hover-transition"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center space-x-3 mb-2">
-                <motion.div 
-                  whileHover={{ scale: 1.1, rotate: 180 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-600"
-                >
-                  <Cpu className="h-6 w-6 text-white" />
-                </motion.div>
-                <h2 className="text-2xl font-bold text-gray-900">AI-Powered Operations Dashboard</h2>
-              </div>
-              <p className="text-gray-600 mt-1 ml-13">🍎 Real-time insights across global manufacturing and distribution network</p>
-            </div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white shadow-lg">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh Data
-              </Button>
-            </motion.div>
+    <PageTransition>
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+              🏭 CornexConnect Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Monitor your global manufacturing and distribution network
+            </p>
           </div>
-        </motion.div>
+          <div className="flex gap-2">
+            {showWelcomeHints && (
+              <Button 
+                variant="outline" 
+                onClick={startDashboardTour}
+                className="bg-gradient-to-r from-emerald-50 to-blue-50 hover:from-emerald-100 hover:to-blue-100"
+              >
+                <Lightbulb className="w-4 h-4 mr-2" />
+                Dashboard Tour
+              </Button>
+            )}
+          </div>
+        </div>
 
-      {/* Real-time Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
-          title="Global Revenue"
-          value={formatCurrency(metrics.revenue * 1000000, "ZAR")}
-          change="+23.5% vs last month"
-          changeType="positive"
-          icon={TrendingUp}
-          iconColor="text-green-600"
-        />
-        
-        <MetricCard
-          title="Production Efficiency"
-          value={`${metrics.efficiency.toFixed(1)}%`}
-          change="AI Optimized"
-          changeType="positive"
-          icon={Cpu}
-          iconColor="text-blue-600"
-        />
-        
-        <MetricCard
-          title="Active Distributors"
-          value={metrics.distributors.toLocaleString()}
-          change="Across 16 countries"
-          changeType="neutral"
-          icon={Globe}
-          iconColor="text-purple-600"
-        />
-        
-        <MetricCard
-          title="Inventory Turnover"
-          value={`${metrics.turnover.toFixed(1)}x`}
-          change="+15% improvement"
-          changeType="positive"
-          icon={RotateCw}
-          iconColor="text-orange-600"
-        />
-      </div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* AI Demand Forecast */}
-          <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center">
-                    <TrendingUp className="h-4 w-4 text-white" />
-                  </div>
-                  <span>AI Demand Forecasting</span>
-                </CardTitle>
-                <div className="flex items-center space-x-2 text-sm text-green-600">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span>🍎 95.3% Accuracy</span>
-                </div>
-              </div>
+        {/* Key Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-hint="dashboard-metrics">
+          <Card className="backdrop-blur-sm bg-white/10 border border-white/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-emerald-500" />
             </CardHeader>
             <CardContent>
-              <DemandChart />
+              <div className="text-2xl font-bold text-emerald-600">
+                {summary?.revenue ? formatCurrency(summary.revenue) : 'Loading...'}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                +12.5% from last month
+              </p>
             </CardContent>
           </Card>
 
-          {/* Production Schedule */}
-          <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-                    <Cpu className="h-4 w-4 text-white" />
-                  </div>
-                  <span>Production Schedule</span>
-                </CardTitle>
-                <Button variant="link" className="text-blue-600 hover:text-blue-800 p-0">
-                  View Details →
-                </Button>
-              </div>
+          <Card className="backdrop-blur-sm bg-white/10 border border-white/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Distributors</CardTitle>
+              <Users className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <ProductionSchedule />
+              <div className="text-2xl font-bold text-blue-600">
+                {summary?.distributors || 'Loading...'}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Across 9 provinces
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="backdrop-blur-sm bg-white/10 border border-white/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Products in Catalog</CardTitle>
+              <Package className="h-4 w-4 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">
+                {summary?.products || 'Loading...'}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                EPS & BR XPS ranges
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="backdrop-blur-sm bg-white/10 border border-white/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Hardware Stores</CardTitle>
+              <MapPin className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">
+                1,864+
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Nationwide coverage
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Product Performance & Global Distribution */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Top Performing SKUs */}
-          <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl">
+        {/* Charts and Analytics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Regional Sales Performance */}
+          <Card className="backdrop-blur-sm bg-white/10 border border-white/20" data-hint="regional-chart">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-                  <TrendingUp className="h-4 w-4 text-white" />
-                </div>
-                <span>Top Performing SKUs</span>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-emerald-500" />
+                Regional Sales Performance
               </CardTitle>
+              <CardDescription>
+                Revenue breakdown by province
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-            <div className="space-y-4">
-              {(topProducts && Array.isArray(topProducts) ? topProducts.slice(0, 5) : []).map((item: any) => (
+            <CardContent className="space-y-4">
+              {regionalSales?.slice(0, 5).map((region: any, index: number) => (
+                <div key={region.region} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{region.region}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {formatCurrency(region.revenue)}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={(region.revenue / (regionalSales?.[0]?.revenue || 1)) * 100} 
+                    className="h-2"
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Top Products */}
+          <Card className="backdrop-blur-sm bg-white/10 border border-white/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-blue-500" />
+                Top Performing Products
+              </CardTitle>
+              <CardDescription>
+                Best-selling Cornex products this month
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {topProducts?.slice(0, 5).map((item: any, index: number) => (
                 <div key={item.product.id} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      item.product.category === 'EPS' ? 'bg-blue-100' :
-                      item.product.category === 'BR' ? 'bg-green-100' : 'bg-purple-100'
-                    }`}>
-                      <span className={`text-xs font-bold ${
-                        item.product.category === 'EPS' ? 'text-blue-600' :
-                        item.product.category === 'BR' ? 'text-green-600' : 'text-purple-600'
-                      }`}>
-                        {item.product.sku}
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="w-8 h-8 rounded-full p-0 flex items-center justify-center">
+                      {index + 1}
+                    </Badge>
                     <div>
-                      <p className="font-medium text-gray-900">{item.product.name}</p>
-                      <p className="text-sm text-gray-600">{item.units.toLocaleString()} units</p>
+                      <p className="font-medium">{item.product.name}</p>
+                      <p className="text-sm text-muted-foreground">{item.product.sku}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-green-600">{formatCurrency(parseFloat(item.revenue), "ZAR")}</p>
-                    <p className="text-xs text-gray-500">+{Math.floor(Math.random() * 20 + 5)}%</p>
+                    <p className="font-medium">{item.quantity} units</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatCurrency(item.revenue)}
+                    </p>
                   </div>
                 </div>
-              )) || (
-                // Fallback data
-                [
-                  { sku: "EPS04", name: "SANTE EPS 85mm", units: 2340, revenue: "25100" },
-                  { sku: "BR9", name: "BR9 XPS 140mm", units: 1890, revenue: "28700" },
-                  { sku: "EPS07", name: "ALINA EPS 140mm", units: 1756, revenue: "21100" }
-                ].map((item, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <span className="text-xs font-bold text-blue-600">{item.sku}</span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{item.name}</p>
-                        <p className="text-sm text-gray-600">{item.units.toLocaleString()} units</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-green-600">{formatCurrency(parseFloat(item.revenue), "ZAR")}</p>
-                      <p className="text-xs text-gray-500">+{Math.floor(Math.random() * 20 + 5)}%</p>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Production and Demand Forecast */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Production Schedule */}
+          <Card className="backdrop-blur-sm bg-white/10 border border-white/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Factory className="w-5 h-5 text-purple-500" />
+                Production Schedule
+              </CardTitle>
+              <CardDescription>
+                Upcoming manufacturing plans
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {productionSchedule?.slice(0, 4).map((schedule: any) => (
+                <div key={schedule.id} className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-white/5">
+                  <div>
+                    <p className="font-medium">{schedule.productName}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(schedule.scheduledDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">{schedule.plannedQuantity} units</p>
+                    <Badge 
+                      variant={schedule.status === 'scheduled' ? 'secondary' : 'default'}
+                      className="text-xs"
+                    >
+                      {schedule.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* AI Demand Forecast */}
+          <Card className="backdrop-blur-sm bg-white/10 border border-white/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-emerald-500" />
+                AI Demand Forecast
+              </CardTitle>
+              <CardDescription>
+                Predicted demand for next 30 days
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {demandForecast?.slice(0, 4).map((forecast: any) => (
+                <div key={forecast.id} className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-white/5">
+                  <div>
+                    <p className="font-medium">{forecast.productName}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Confidence: {Math.round(forecast.confidence * 100)}%
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">{forecast.predictedDemand} units</p>
+                    <div className="flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3 text-green-500" />
+                      <span className="text-xs text-green-600">
+                        +{Math.round((forecast.predictedDemand / 1000) * 15)}%
+                      </span>
                     </div>
                   </div>
-                ))
-              )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <Card className="backdrop-blur-sm bg-white/10 border border-white/20">
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>
+              Common tasks and shortcuts
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Button variant="outline" className="h-20 flex flex-col gap-2">
+                <Package className="w-6 h-6" />
+                <span className="text-sm">Add Product</span>
+              </Button>
+              <Button variant="outline" className="h-20 flex flex-col gap-2">
+                <Users className="w-6 h-6" />
+                <span className="text-sm">New Distributor</span>
+              </Button>
+              <Button variant="outline" className="h-20 flex flex-col gap-2">
+                <Factory className="w-6 h-6" />
+                <span className="text-sm">Schedule Production</span>
+              </Button>
+              <Button variant="outline" className="h-20 flex flex-col gap-2">
+                <TrendingUp className="w-6 h-6" />
+                <span className="text-sm">View Analytics</span>
+              </Button>
             </div>
           </CardContent>
         </Card>
 
-          {/* Global Distribution Network */}
-          <Card className="lg:col-span-2 bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                    <Globe className="h-4 w-4 text-white" />
-                  </div>
-                  <span>Global Distribution Network</span>
-                </CardTitle>
-                <div className="flex items-center space-x-4 text-sm text-gray-600">
-                  <span>🟢 Active: {(summary as any)?.distributorsCount || 0}</span>
-                  <span>📍 Countries: 16</span>
-                  <span>🍎 Real-time sync</span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <DistributorMap />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Cornex Brand Portfolio Showcase */}
-        <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl border-2 border-emerald-200/50 bg-gradient-to-br from-emerald-50 via-white to-blue-50">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl text-cornex-blue mb-2">🎨 Cornex™ Brand Portfolio</CardTitle>
-              <p className="text-gray-600">FAA.Zone Sovereign Scrolls • VaultMesh Memory Certified • TreatyMesh Housing Compliance</p>
-            </div>
-            <Badge variant="outline" className="bg-white border-cornex-blue text-cornex-blue px-3 py-1">
-              4 Active Brands
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {CORNEX_BRANDS.map((brand, index) => (
-              <Link key={brand.id} href={`/brands/${brand.id}`}>
-                <div 
-                  className="group cursor-pointer brand-card-hover glow-on-hover"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <Card className="border-2 hover:border-gray-300 bg-white/90 backdrop-blur-sm shadow-lg">
-                    <CardContent className="p-6 text-center">
-                      <div className="flex items-center justify-center mb-4">
-                        <div 
-                          className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold shadow-xl floating-animation"
-                          style={{ 
-                            backgroundColor: brand.color,
-                            boxShadow: `0 8px 32px ${brand.color}40`
-                          }}
-                        >
-                          <span className="text-xl">{brand.icon}</span>
-                        </div>
-                      </div>
-                      <h3 className="font-bold text-lg text-gray-900 mb-2 gradient-text">{brand.displayName}</h3>
-                      <p className="text-sm text-gray-600 mb-4 leading-relaxed">{brand.description}</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full group-hover:bg-gray-50 transition-all duration-300 font-semibold"
-                        style={{ borderColor: brand.color, color: brand.color }}
-                      >
-                        Explore Brand →
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-        {/* AI Insights Panel */}
-        <Card className="bg-gradient-to-r from-emerald-500 to-blue-600 text-white shadow-xl rounded-2xl">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">🤖 AI Recommendations</h3>
-              <div className="space-y-2 text-blue-100">
-                <p>• Increase EPS04 production by 15% based on demand forecast</p>
-                <p>• Optimize BR9 inventory levels for Q2 seasonal demand</p>
-                <p>• Consider new distribution partnerships in East Africa</p>
-              </div>
-            </div>
-            <Button variant="secondary" className="bg-white/20 backdrop-blur hover:bg-white/30 text-white border-0">
-              View Full Analysis
-            </Button>
-          </div>
-        </CardContent>
-        </Card>
+        {/* Transition Hints Component */}
+        <AnimatePresence>
+          {hintsVisible && (
+            <TransitionHints
+              steps={activeHints}
+              isVisible={hintsVisible}
+              onComplete={completeHints}
+              onSkip={skipDashboardTour}
+              currentStep={currentStep}
+            />
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </PageTransition>
   );
 }

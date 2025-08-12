@@ -10,9 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X, Download, Eye } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/PageTransition";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { TransitionHints, useTransitionHints, HINT_SEQUENCES } from "@/components/TransitionHints";
 
 interface ImportFile {
   id: string;
@@ -43,6 +45,17 @@ export default function BulkImport() {
   const [importFiles, setImportFiles] = useState<ImportFile[]>([]);
   const [currentSession, setCurrentSession] = useState<ImportSession | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [showWelcomeHints, setShowWelcomeHints] = useState(true);
+  
+  // Transition hints system
+  const { 
+    activeHints, 
+    isVisible: hintsVisible, 
+    currentStep, 
+    showHints, 
+    hideHints, 
+    completeHints 
+  } = useTransitionHints();
   const [activeTab, setActiveTab] = useState("upload");
   const [selectedSessionDetails, setSelectedSessionDetails] = useState<ImportSession | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
@@ -181,6 +194,16 @@ export default function BulkImport() {
     setCurrentSession(null);
   };
 
+  // Show welcome hints on first visit
+  const startWelcomeTour = () => {
+    showHints(HINT_SEQUENCES.bulkImport);
+  };
+
+  const skipWelcomeTour = () => {
+    setShowWelcomeHints(false);
+    hideHints();
+  };
+
   const viewSessionDetails = (session: ImportSession) => {
     setSelectedSessionDetails(session);
     setShowDetailsDialog(true);
@@ -264,6 +287,17 @@ export default function BulkImport() {
               Import unstructured Excel files to add hardware stores to the system
             </p>
           </div>
+          <div className="flex gap-2">
+            {showWelcomeHints && (
+              <Button 
+                variant="outline" 
+                onClick={startWelcomeTour}
+                className="bg-gradient-to-r from-emerald-50 to-blue-50 hover:from-emerald-100 hover:to-blue-100"
+              >
+                💡 Take Tour
+              </Button>
+            )}
+          </div>
           {importFiles.length > 0 && (
             <div className="flex gap-2">
               <Button variant="outline" onClick={clearAll}>
@@ -294,6 +328,7 @@ export default function BulkImport() {
             <Card className="relative overflow-hidden backdrop-blur-sm bg-white/10 border border-white/20">
               <div
                 {...getRootProps()}
+                data-hint="file-drop-zone"
                 className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-all duration-300 ${
                   isDragActive || dragActive
                     ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/50"
@@ -572,7 +607,7 @@ export default function BulkImport() {
 
           {/* History Tab */}
           <TabsContent value="history" className="space-y-6">
-            <div className="grid gap-4">
+            <div className="grid gap-4" data-hint="import-history">
               {importHistory.length > 0 ? (
                 importHistory.map((session: ImportSession) => (
                   <Card key={session.id} className="backdrop-blur-sm bg-white/10 border border-white/20">
@@ -806,6 +841,19 @@ export default function BulkImport() {
             </div>
           </div>
         )}
+
+        {/* Transition Hints Component */}
+        <AnimatePresence>
+          {hintsVisible && (
+            <TransitionHints
+              steps={activeHints}
+              isVisible={hintsVisible}
+              onComplete={completeHints}
+              onSkip={skipWelcomeTour}
+              currentStep={currentStep}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </PageTransition>
   );
