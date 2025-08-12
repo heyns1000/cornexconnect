@@ -1,9 +1,16 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { 
   TrendingUp, 
   Users, 
@@ -12,7 +19,9 @@ import {
   Factory,
   MapPin,
   BarChart3,
-  Lightbulb
+  Lightbulb,
+  Plus,
+  Calendar
 } from "lucide-react";
 import { PageTransition } from "@/components/PageTransition";
 import { TransitionHints, useTransitionHints, HINT_SEQUENCES } from "@/components/TransitionHints";
@@ -20,6 +29,39 @@ import { AnimatePresence } from "framer-motion";
 
 export default function Dashboard() {
   const [showWelcomeHints, setShowWelcomeHints] = useState(true);
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  
+  // Modal states
+  const [addProductOpen, setAddProductOpen] = useState(false);
+  const [addDistributorOpen, setAddDistributorOpen] = useState(false);
+  const [scheduleProductionOpen, setScheduleProductionOpen] = useState(false);
+  
+  // Form states
+  const [newProduct, setNewProduct] = useState({
+    sku: '',
+    name: '',
+    description: '',
+    category: '',
+    basePrice: '',
+    costPrice: ''
+  });
+  
+  const [newDistributor, setNewDistributor] = useState({
+    name: '',
+    contactPerson: '',
+    email: '',
+    phone: '',
+    city: '',
+    region: ''
+  });
+  
+  const [newProduction, setNewProduction] = useState({
+    productId: '',
+    quantity: '',
+    scheduledDate: '',
+    priority: 'medium'
+  });
   
   // Transition hints system
   const { 
@@ -64,6 +106,92 @@ export default function Dashboard() {
   const skipDashboardTour = () => {
     setShowWelcomeHints(false);
     hideHints();
+  };
+
+  // Quick Action handlers
+  const handleAddProduct = async () => {
+    try {
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProduct)
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Product Added",
+          description: `${newProduct.name} has been added successfully.`,
+        });
+        setAddProductOpen(false);
+        setNewProduct({ sku: '', name: '', description: '', category: '', basePrice: '', costPrice: '' });
+      } else {
+        throw new Error('Failed to add product');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add product. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddDistributor = async () => {
+    try {
+      const response = await fetch('/api/distributors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newDistributor)
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Distributor Added",
+          description: `${newDistributor.name} has been added successfully.`,
+        });
+        setAddDistributorOpen(false);
+        setNewDistributor({ name: '', contactPerson: '', email: '', phone: '', city: '', region: '' });
+      } else {
+        throw new Error('Failed to add distributor');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add distributor. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleScheduleProduction = async () => {
+    try {
+      const response = await fetch('/api/production-schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProduction)
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Production Scheduled",
+          description: "Production has been scheduled successfully.",
+        });
+        setScheduleProductionOpen(false);
+        setNewProduction({ productId: '', quantity: '', scheduledDate: '', priority: 'medium' });
+      } else {
+        throw new Error('Failed to schedule production');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to schedule production. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleViewAnalytics = () => {
+    setLocation('/analytics');
   };
 
   // Format currency for display
@@ -314,21 +442,279 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button variant="outline" className="h-20 flex flex-col gap-2">
-                <Package className="w-6 h-6" />
-                <span className="text-sm">Add Product</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col gap-2">
-                <Users className="w-6 h-6" />
-                <span className="text-sm">New Distributor</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col gap-2">
-                <Factory className="w-6 h-6" />
-                <span className="text-sm">Schedule Production</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col gap-2">
-                <TrendingUp className="w-6 h-6" />
-                <span className="text-sm">View Analytics</span>
+              {/* Add Product Modal */}
+              <Dialog open={addProductOpen} onOpenChange={setAddProductOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="h-20 flex flex-col gap-2 hover:bg-emerald-50 hover:border-emerald-200 transition-colors">
+                    <Package className="w-6 h-6 text-emerald-600" />
+                    <span className="text-sm font-medium">Add Product</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Plus className="w-5 h-5 text-emerald-600" />
+                      Add New Product
+                    </DialogTitle>
+                    <DialogDescription>
+                      Create a new product in your catalog. Fill in the details below.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="sku" className="text-right">SKU</Label>
+                      <Input 
+                        id="sku" 
+                        value={newProduct.sku}
+                        onChange={(e) => setNewProduct({...newProduct, sku: e.target.value})}
+                        className="col-span-3" 
+                        placeholder="e.g., EPS01"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="name" className="text-right">Name</Label>
+                      <Input 
+                        id="name" 
+                        value={newProduct.name}
+                        onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                        className="col-span-3" 
+                        placeholder="Product name"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="category" className="text-right">Category</Label>
+                      <Select value={newProduct.category} onValueChange={(value) => setNewProduct({...newProduct, category: value})}>
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="EPS">EPS Cornice</SelectItem>
+                          <SelectItem value="BR">BR XPS Cornice</SelectItem>
+                          <SelectItem value="LED">LED Lighting</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="basePrice" className="text-right">Base Price</Label>
+                      <Input 
+                        id="basePrice" 
+                        type="number"
+                        value={newProduct.basePrice}
+                        onChange={(e) => setNewProduct({...newProduct, basePrice: e.target.value})}
+                        className="col-span-3" 
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="costPrice" className="text-right">Cost Price</Label>
+                      <Input 
+                        id="costPrice" 
+                        type="number"
+                        value={newProduct.costPrice}
+                        onChange={(e) => setNewProduct({...newProduct, costPrice: e.target.value})}
+                        className="col-span-3" 
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="description" className="text-right">Description</Label>
+                      <Textarea 
+                        id="description" 
+                        value={newProduct.description}
+                        onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                        className="col-span-3" 
+                        placeholder="Product description"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setAddProductOpen(false)}>Cancel</Button>
+                    <Button onClick={handleAddProduct} className="bg-emerald-600 hover:bg-emerald-700">Add Product</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Add Distributor Modal */}
+              <Dialog open={addDistributorOpen} onOpenChange={setAddDistributorOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="h-20 flex flex-col gap-2 hover:bg-blue-50 hover:border-blue-200 transition-colors">
+                    <Users className="w-6 h-6 text-blue-600" />
+                    <span className="text-sm font-medium">New Distributor</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5 text-blue-600" />
+                      Add New Distributor
+                    </DialogTitle>
+                    <DialogDescription>
+                      Register a new distributor partner. Complete the information below.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="dist-name" className="text-right">Company</Label>
+                      <Input 
+                        id="dist-name" 
+                        value={newDistributor.name}
+                        onChange={(e) => setNewDistributor({...newDistributor, name: e.target.value})}
+                        className="col-span-3" 
+                        placeholder="Company name"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="contact-person" className="text-right">Contact</Label>
+                      <Input 
+                        id="contact-person" 
+                        value={newDistributor.contactPerson}
+                        onChange={(e) => setNewDistributor({...newDistributor, contactPerson: e.target.value})}
+                        className="col-span-3" 
+                        placeholder="Contact person"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="email" className="text-right">Email</Label>
+                      <Input 
+                        id="email" 
+                        type="email"
+                        value={newDistributor.email}
+                        onChange={(e) => setNewDistributor({...newDistributor, email: e.target.value})}
+                        className="col-span-3" 
+                        placeholder="contact@company.com"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="phone" className="text-right">Phone</Label>
+                      <Input 
+                        id="phone" 
+                        value={newDistributor.phone}
+                        onChange={(e) => setNewDistributor({...newDistributor, phone: e.target.value})}
+                        className="col-span-3" 
+                        placeholder="+27 11 555 0000"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="city" className="text-right">City</Label>
+                      <Input 
+                        id="city" 
+                        value={newDistributor.city}
+                        onChange={(e) => setNewDistributor({...newDistributor, city: e.target.value})}
+                        className="col-span-3" 
+                        placeholder="City"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="region" className="text-right">Region</Label>
+                      <Select value={newDistributor.region} onValueChange={(value) => setNewDistributor({...newDistributor, region: value})}>
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select region" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Gauteng">Gauteng</SelectItem>
+                          <SelectItem value="Western Cape">Western Cape</SelectItem>
+                          <SelectItem value="KwaZulu-Natal">KwaZulu-Natal</SelectItem>
+                          <SelectItem value="Eastern Cape">Eastern Cape</SelectItem>
+                          <SelectItem value="North West">North West</SelectItem>
+                          <SelectItem value="Limpopo">Limpopo</SelectItem>
+                          <SelectItem value="Mpumalanga">Mpumalanga</SelectItem>
+                          <SelectItem value="Free State">Free State</SelectItem>
+                          <SelectItem value="Northern Cape">Northern Cape</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setAddDistributorOpen(false)}>Cancel</Button>
+                    <Button onClick={handleAddDistributor} className="bg-blue-600 hover:bg-blue-700">Add Distributor</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Schedule Production Modal */}
+              <Dialog open={scheduleProductionOpen} onOpenChange={setScheduleProductionOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="h-20 flex flex-col gap-2 hover:bg-purple-50 hover:border-purple-200 transition-colors">
+                    <Factory className="w-6 h-6 text-purple-600" />
+                    <span className="text-sm font-medium">Schedule Production</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-purple-600" />
+                      Schedule Production
+                    </DialogTitle>
+                    <DialogDescription>
+                      Create a new production schedule entry for manufacturing.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="product-select" className="text-right">Product</Label>
+                      <Select value={newProduction.productId} onValueChange={(value) => setNewProduction({...newProduction, productId: value})}>
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select product" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="eps01">EPS01 - Premium Cornice</SelectItem>
+                          <SelectItem value="eps02">EPS02 - Standard Cornice</SelectItem>
+                          <SelectItem value="br01">BR01 - XPS Premium</SelectItem>
+                          <SelectItem value="br02">BR02 - XPS Standard</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="quantity" className="text-right">Quantity</Label>
+                      <Input 
+                        id="quantity" 
+                        type="number"
+                        value={newProduction.quantity}
+                        onChange={(e) => setNewProduction({...newProduction, quantity: e.target.value})}
+                        className="col-span-3" 
+                        placeholder="1000"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="scheduled-date" className="text-right">Date</Label>
+                      <Input 
+                        id="scheduled-date" 
+                        type="date"
+                        value={newProduction.scheduledDate}
+                        onChange={(e) => setNewProduction({...newProduction, scheduledDate: e.target.value})}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="priority" className="text-right">Priority</Label>
+                      <Select value={newProduction.priority} onValueChange={(value) => setNewProduction({...newProduction, priority: value})}>
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="urgent">Urgent</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setScheduleProductionOpen(false)}>Cancel</Button>
+                    <Button onClick={handleScheduleProduction} className="bg-purple-600 hover:bg-purple-700">Schedule Production</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* View Analytics Button */}
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col gap-2 hover:bg-orange-50 hover:border-orange-200 transition-colors"
+                onClick={handleViewAnalytics}
+              >
+                <BarChart3 className="w-6 h-6 text-orange-600" />
+                <span className="text-sm font-medium">View Analytics</span>
               </Button>
             </div>
           </CardContent>
