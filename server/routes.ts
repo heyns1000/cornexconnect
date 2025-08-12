@@ -1257,8 +1257,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               if (storeData && storeData.storeName && 
                   storeData.storeName !== 'STORE NAME' && 
-                  storeData.storeName.length > 2 &&
-                  !storeData.storeName.toUpperCase().includes('HEADER')) {
+                  storeData.storeName !== 'Company Name' &&
+                  storeData.storeName.length > 1 &&
+                  typeof storeData.storeName === 'string' &&
+                  storeData.storeName.trim() !== '' &&
+                  !storeData.storeName.toUpperCase().includes('HEADER') &&
+                  !storeData.storeName.toUpperCase().includes('COLUMN')) {
                 
                 // Standardize province and city naming
                 const standardizedData = standardizeLocationData(storeData);
