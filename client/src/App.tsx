@@ -18,6 +18,7 @@ import FactorySetup from "@/pages/FactorySetup";
 import ExtendedAutomation from "@/pages/ExtendedAutomation";
 import ExcelUpload from "@/pages/ExcelUpload";
 import BulkImport from "@/pages/BulkImport";
+import HardwareStores from "@/pages/HardwareStores";
 import LogisticsIntegration from "@/pages/LogisticsIntegration";
 import Landing from "@/pages/Landing";
 import Sidebar from "@/components/Sidebar";
@@ -68,6 +69,7 @@ function Router() {
         <Route path="/automation" component={ExtendedAutomation} />
         <Route path="/excel-upload" component={ExcelUpload} />
         <Route path="/bulk-import" component={BulkImport} />
+        <Route path="/hardware-stores" component={HardwareStores} />
         <Route path="/logistics" component={LogisticsIntegration} />
         <Route path="/brands/:id" component={BrandDetail} />
       </Switch>

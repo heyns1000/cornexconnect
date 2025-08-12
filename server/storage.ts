@@ -1433,6 +1433,7 @@ class MemoryStorage implements IStorage {
       lastVisitDate: store.lastVisitDate || null
     };
     this.hardwareStores.push(newStore);
+    console.log(`[Storage] Added hardware store: ${newStore.address}, ${newStore.city}. Total stores: ${this.hardwareStores.length}`);
     return newStore;
   }
   async getProducts(): Promise<Product[]> { return []; }
@@ -1482,7 +1483,10 @@ class MemoryStorage implements IStorage {
   async getSalesReps(): Promise<SalesRep[]> { return []; }
   async getSalesRep(id: string): Promise<SalesRep | undefined> { return undefined; }
   async createSalesRep(rep: InsertSalesRep): Promise<SalesRep> { throw new Error("Database temporarily unavailable"); }
-  async getHardwareStores(): Promise<HardwareStore[]> { return this.hardwareStores; }
+  async getHardwareStores(): Promise<HardwareStore[]> { 
+    console.log(`[Storage] Retrieved ${this.hardwareStores.length} hardware stores from memory`);
+    return this.hardwareStores; 
+  }
   async getHardwareStore(id: string): Promise<HardwareStore | undefined> { 
     return this.hardwareStores.find(store => store.id === id);
   }

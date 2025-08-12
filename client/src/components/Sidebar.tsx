@@ -13,7 +13,8 @@ import {
   Bot,
   Upload,
   ShoppingCart,
-  Truck
+  Truck,
+  Store
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -122,6 +123,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <div className="flex items-center px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 <Upload className="w-4 h-4 mr-3 flex-shrink-0" />
                 {!collapsed && <span>Bulk Import</span>}
+              </div>
+            </Link>
+            <Link href="/hardware-stores">
+              <div className="flex items-center px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                <Store className="w-4 h-4 mr-3 flex-shrink-0" />
+                {!collapsed && <span>Hardware Stores</span>}
               </div>
             </Link>
             <Link href="/licensing">

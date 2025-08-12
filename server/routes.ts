@@ -1154,6 +1154,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Hardware stores endpoint
+  app.get("/api/hardware-stores", async (req, res) => {
+    try {
+      const province = req.query.province as string;
+      let stores;
+      if (province) {
+        stores = await storage.getHardwareStoresByProvince(province);
+      } else {
+        stores = await storage.getHardwareStores();
+      }
+      res.json(stores);
+    } catch (error) {
+      console.error("Error fetching hardware stores:", error);
+      res.status(500).json({ message: "Failed to fetch hardware stores" });
+    }
+  });
+
   // Add bulk import routes
   addBulkImportRoutes(app);
 
