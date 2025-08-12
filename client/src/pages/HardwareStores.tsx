@@ -36,28 +36,33 @@ import { apiRequest } from "@/lib/queryClient";
 
 interface HardwareStore {
   id: string;
+  storeCode?: string;
   storeName: string;
-  province: string;
-  city: string;
-  customerName: string;
-  contactNumber?: string;
+  ownerName?: string;
+  contactPerson?: string;
+  phone?: string;
   email?: string;
-  address?: string;
-  storeSize: 'small' | 'medium' | 'large';
-  creditLimit: number;
-  currentBalance: number;
-  salesRepId?: string;
-  salesRepName?: string;
+  address: string;
+  city: string;
+  province: string;
+  postalCode?: string;
+  latitude?: number;
+  longitude?: number;
+  storeSize?: string;
+  storeType: string;
+  creditRating?: string;
+  monthlyPotential?: string;
+  lastOrderDate?: string;
   lastVisitDate?: string;
-  nextVisitDate?: string;
-  performance: {
-    monthlyRevenue: number;
-    totalOrders: number;
-    averageOrderValue: number;
+  isActive?: boolean;
+  status?: 'active' | 'inactive' | 'pending';
+  performance?: {
+    monthlyRevenue?: number;
+    totalOrders?: number;
+    averageOrderValue?: number;
   };
-  status: 'active' | 'inactive' | 'pending';
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface SalesRep {
@@ -98,7 +103,7 @@ export default function HardwareStores() {
     queryKey: ["/api/sales-reps"],
   });
 
-  const { data: storeAnalytics } = useQuery({
+  const { data: storeAnalytics = {} } = useQuery({
     queryKey: ["/api/hardware-stores/analytics"],
   });
 
@@ -134,11 +139,13 @@ export default function HardwareStores() {
   // Filter stores
   const filteredStores = stores.filter((store: HardwareStore) => {
     const matchesSearch = store.storeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         store.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (store.ownerName || store.contactPerson || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          store.city.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesProvince = selectedProvince === "all" || store.province === selectedProvince;
     const matchesSize = selectedSize === "all" || store.storeSize === selectedSize;
-    const matchesStatus = selectedStatus === "all" || store.status === selectedStatus;
+    const matchesStatus = selectedStatus === "all" || 
+      (selectedStatus === "active" && store.isActive === true) ||
+      (selectedStatus === "inactive" && store.isActive === false);
     
     return matchesSearch && matchesProvince && matchesSize && matchesStatus;
   });
@@ -257,10 +264,10 @@ export default function HardwareStores() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {stores.filter((s: HardwareStore) => s.status === 'active').length}
+                {stores.filter((s: HardwareStore) => s.isActive === true).length}
               </div>
               <p className="text-xs text-muted-foreground">
-                {stores.length > 0 ? Math.round((stores.filter((s: HardwareStore) => s.status === 'active').length / stores.length) * 100) : 0}% active rate
+                {stores.length > 0 ? Math.round((stores.filter((s: HardwareStore) => s.isActive === true).length / stores.length) * 100) : 0}% active rate
               </p>
             </CardContent>
           </Card>
@@ -494,12 +501,12 @@ export default function HardwareStores() {
                   <div>
                     <h3 className="font-semibold mb-2">Store Information</h3>
                     <div className="space-y-2 text-sm">
-                      <p><span className="font-medium">Customer:</span> {selectedStore.customerName}</p>
+                      <p><span className="font-medium">Owner:</span> {selectedStore.ownerName || selectedStore.contactPerson || 'N/A'}</p>
                       <p><span className="font-medium">Location:</span> {selectedStore.city}, {selectedStore.province}</p>
-                      <p><span className="font-medium">Size:</span> {selectedStore.storeSize}</p>
-                      <p><span className="font-medium">Status:</span> {selectedStore.status}</p>
-                      {selectedStore.contactNumber && (
-                        <p><span className="font-medium">Phone:</span> {selectedStore.contactNumber}</p>
+                      <p><span className="font-medium">Type:</span> {selectedStore.storeType}</p>
+                      <p><span className="font-medium">Status:</span> {selectedStore.isActive ? 'Active' : 'Inactive'}</p>
+                      {selectedStore.phone && (
+                        <p><span className="font-medium">Phone:</span> {selectedStore.phone}</p>
                       )}
                       {selectedStore.email && (
                         <p><span className="font-medium">Email:</span> {selectedStore.email}</p>
@@ -510,9 +517,9 @@ export default function HardwareStores() {
                   <div>
                     <h3 className="font-semibold mb-2">Financial Information</h3>
                     <div className="space-y-2 text-sm">
-                      <p><span className="font-medium">Credit Limit:</span> {formatCurrency(selectedStore.creditLimit)}</p>
-                      <p><span className="font-medium">Current Balance:</span> {formatCurrency(selectedStore.currentBalance)}</p>
-                      <p><span className="font-medium">Available Credit:</span> {formatCurrency(selectedStore.creditLimit - selectedStore.currentBalance)}</p>
+                      <p><span className="font-medium">Credit Rating:</span> {selectedStore.creditRating || 'B'}</p>
+                      <p><span className="font-medium">Monthly Potential:</span> {selectedStore.monthlyPotential ? formatCurrency(parseFloat(selectedStore.monthlyPotential)) : 'R0'}</p>
+                      <p><span className="font-medium">Store Type:</span> {selectedStore.storeType}</p>
                     </div>
                   </div>
                 </div>
@@ -521,23 +528,20 @@ export default function HardwareStores() {
                   <div>
                     <h3 className="font-semibold mb-2">Performance Metrics</h3>
                     <div className="space-y-2 text-sm">
-                      <p><span className="font-medium">Monthly Revenue:</span> {formatCurrency(selectedStore.performance.monthlyRevenue)}</p>
-                      <p><span className="font-medium">Total Orders:</span> {selectedStore.performance.totalOrders}</p>
-                      <p><span className="font-medium">Avg Order Value:</span> {formatCurrency(selectedStore.performance.averageOrderValue)}</p>
+                      <p><span className="font-medium">Monthly Revenue:</span> {selectedStore.performance?.monthlyRevenue ? formatCurrency(selectedStore.performance.monthlyRevenue) : 'R0'}</p>
+                      <p><span className="font-medium">Total Orders:</span> {selectedStore.performance?.totalOrders || 0}</p>
+                      <p><span className="font-medium">Avg Order Value:</span> {selectedStore.performance?.averageOrderValue ? formatCurrency(selectedStore.performance.averageOrderValue) : 'R0'}</p>
                     </div>
                   </div>
 
                   <div>
                     <h3 className="font-semibold mb-2">Sales Representative</h3>
                     <div className="space-y-2 text-sm">
-                      {selectedStore.salesRepName ? (
+                      {selectedStore.lastVisitDate ? (
                         <>
-                          <p><span className="font-medium">Assigned Rep:</span> {selectedStore.salesRepName}</p>
-                          {selectedStore.lastVisitDate && (
-                            <p><span className="font-medium">Last Visit:</span> {new Date(selectedStore.lastVisitDate).toLocaleDateString()}</p>
-                          )}
-                          {selectedStore.nextVisitDate && (
-                            <p><span className="font-medium">Next Visit:</span> {new Date(selectedStore.nextVisitDate).toLocaleDateString()}</p>
+                          <p><span className="font-medium">Last Visit:</span> {new Date(selectedStore.lastVisitDate).toLocaleDateString()}</p>
+                          {selectedStore.lastOrderDate && (
+                            <p><span className="font-medium">Last Order:</span> {new Date(selectedStore.lastOrderDate).toLocaleDateString()}</p>
                           )}
                         </>
                       ) : (
