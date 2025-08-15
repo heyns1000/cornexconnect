@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +46,7 @@ export default function CountrySelector({ open, onClose }: CountrySelectorProps)
       region = 'Americas';
     } else if (['JP', 'CN', 'IN', 'AU'].includes(country.code)) {
       region = 'Asia-Pacific';
-    } else if (['SA', 'AE'].includes(country.code)) {
+    } else if (['TR', 'SA', 'AE'].includes(country.code)) {
       region = 'Middle East';
     }
     
@@ -63,6 +63,9 @@ export default function CountrySelector({ open, onClose }: CountrySelectorProps)
             <MapPin className="w-5 h-5" />
             <span>Select Your Country</span>
           </DialogTitle>
+          <DialogDescription>
+            Choose your country to customize language, currency, and regional settings for your CornexConnect experience.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Search */}

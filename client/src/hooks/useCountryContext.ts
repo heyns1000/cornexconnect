@@ -17,7 +17,20 @@ const CountryContext = createContext<CountryContextType | undefined>(undefined);
 export const useCountry = () => {
   const context = useContext(CountryContext);
   if (context === undefined) {
-    throw new Error('useCountry must be used within a CountryProvider');
+    console.error('CountryContext is undefined - Provider may not be properly wrapping the component');
+    // Return default values instead of throwing error
+    return {
+      currentCountry: DEFAULT_COUNTRY,
+      setCountry: (countryCode: string) => {
+        console.warn('setCountry called outside of provider context');
+        setCurrentCountry(countryCode);
+      },
+      translations: DEFAULT_COUNTRY.translations,
+      currency: DEFAULT_COUNTRY.currency,
+      phonePrefix: DEFAULT_COUNTRY.phonePrefix,
+      timezone: DEFAULT_COUNTRY.timezone,
+      dateFormat: DEFAULT_COUNTRY.dateFormat,
+    };
   }
   return context;
 };

@@ -173,6 +173,55 @@ const spanishTranslations: Translation = {
   dimensions: "Milímetros"
 };
 
+// Turkish translations
+const turkishTranslations: Translation = {
+  dashboard: "AI Pano",
+  productCatalog: "Ürün Kataloğu",
+  productionPlanning: "Üretim Planlaması",
+  inventoryAI: "Envanter AI",
+  globalDistributors: "Küresel Distribütörler",
+  businessIntelligence: "İş Zekası",
+  routeManagement: "Rota Yönetimi",
+  factorySetup: "Fabrika Kurulumu",
+  hardwareStores: "Hırdavat Mağazaları",
+  storeMap: "Mağaza Haritası",
+  
+  cornexManufacturing: "Cornex İmalat",
+  epsProducts: "EPS Ürünleri",
+  xpsProducts: "XPS Ürünleri",
+  productionSchedule: "Üretim Programı",
+  qualityControl: "Kalite Kontrol",
+  
+  salesReps: "Satış Temsilcileri",
+  distributorNetwork: "Distribütör Ağı",
+  orderManagement: "Sipariş Yönetimi",
+  inventoryControl: "Envanter Kontrolü",
+  demandForecasting: "Talep Tahmini",
+  
+  edit: "Düzenle",
+  delete: "Sil",
+  save: "Kaydet",
+  cancel: "İptal",
+  close: "Kapat",
+  create: "Oluştur",
+  view: "Görüntüle",
+  export: "Dışa Aktar",
+  import: "İçe Aktar",
+  search: "Ara",
+  filter: "Filtrele",
+  
+  active: "Aktif",
+  inactive: "Pasif",
+  pending: "Beklemede",
+  completed: "Tamamlandı",
+  inProgress: "Devam Ediyor",
+  
+  currency: "TRY",
+  volume: "Metreküp",
+  weight: "Kilogram",
+  dimensions: "Milimetre"
+};
+
 // German translations
 const germanTranslations: Translation = {
   dashboard: "AI Dashboard",
@@ -554,6 +603,19 @@ export const SUPPORTED_COUNTRIES: CountryConfig[] = [
   },
 
   // Middle East
+  {
+    code: 'TR',
+    name: 'Turkey',
+    flag: '🇹🇷',
+    currency: 'TRY',
+    phonePrefix: '+90',
+    timezone: 'Europe/Istanbul',
+    dateFormat: 'DD/MM/YYYY',
+    regions: 81,
+    capital: 'Ankara',
+    language: 'Turkish',
+    translations: turkishTranslations
+  },
   {
     code: 'SA',
     name: 'Saudi Arabia',
