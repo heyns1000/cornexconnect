@@ -37,9 +37,11 @@ import {
   Calendar,
   Search
 } from "lucide-react";
+import { useCountry } from "@/hooks/useCountryContext";
 
 export default function RouteManagement() {
   const [searchTerm, setSearchTerm] = useState("");
+  const { translations: t } = useCountry();
   
   // Fetch route data
   const { data: routes, isLoading: routesLoading } = useQuery({

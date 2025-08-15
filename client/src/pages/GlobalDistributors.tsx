@@ -15,6 +15,7 @@ import { formatCurrency, getCurrencyFlag } from "@/lib/currency";
 import { CORNEX_BRANDS, CURRENCIES } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useCountry } from "@/hooks/useCountryContext";
 
 export default function GlobalDistributors() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,6 +23,7 @@ export default function GlobalDistributors() {
   const [statusFilter, setStatusFilter] = useState("all");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { translations: t } = useCountry();
 
   const { data: distributors, isLoading } = useQuery({
     queryKey: ["/api/distributors", regionFilter],

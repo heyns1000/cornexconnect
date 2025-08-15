@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import ProductTable from "@/components/ProductTable";
+import { useCountry } from "@/hooks/useCountryContext";
 
 export default function ProductCatalog() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { translations: t } = useCountry();
   
   const { data: products = [] } = useQuery({
     queryKey: ["/api/products"],

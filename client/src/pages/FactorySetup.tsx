@@ -34,6 +34,7 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/currency";
 import { useToast } from "@/hooks/use-toast";
+import { useCountry } from "@/hooks/useCountryContext";
 import type { 
   FactorySetup, 
   ProductionMetrics, 
@@ -43,6 +44,7 @@ import type {
 
 export default function FactorySetup() {
   const { toast } = useToast();
+  const { translations: t } = useCountry();
   const [selectedFactory, setSelectedFactory] = useState<string | null>(null);
   const [newFactoryForm, setNewFactoryForm] = useState({
     name: '',

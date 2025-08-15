@@ -11,12 +11,14 @@ import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/currency";
 import { SOUTH_AFRICAN_PROVINCES } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
+import { useCountry } from "@/hooks/useCountryContext";
 
 export default function BusinessIntelligence() {
   const [selectedTimeframe, setSelectedTimeframe] = useState("30d");
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [selectedMetric, setSelectedMetric] = useState("revenue");
   const { toast } = useToast();
+  const { translations: t } = useCountry();
 
   const handleFilterClick = () => {
     toast({
