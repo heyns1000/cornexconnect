@@ -53,6 +53,21 @@ export interface Translation {
   volume: string;
   weight: string;
   dimensions: string;
+  
+  // Dashboard Content
+  totalRevenue: string;
+  activeDistributors: string;
+  productsInCatalog: string;
+  regionalSalesPerformance: string;
+  topPerformingProducts: string;
+  revenueBreakdownByProvince: string;
+  bestSellingProducts: string;
+  productionSchedule: string;
+  aiDemandForecast: string;
+  upcomingManufacturingPlans: string;
+  predictedDemandNext30Days: string;
+  units: string;
+  confidence: string;
 }
 
 export interface CountryConfig {
@@ -121,7 +136,22 @@ const southAfricaTranslations: Translation = {
   currency: "ZAR",
   volume: "Cubic Metres",
   weight: "Kilograms",
-  dimensions: "Millimetres"
+  dimensions: "Millimetres",
+  
+  // Dashboard Content
+  totalRevenue: "Total Revenue",
+  activeDistributors: "Active Distributors", 
+  productsInCatalog: "Products in Catalog",
+  regionalSalesPerformance: "Regional Sales Performance",
+  topPerformingProducts: "Top Performing Products",
+  revenueBreakdownByProvince: "Revenue breakdown by province",
+  bestSellingProducts: "Best-selling Cornex products this month",
+  productionSchedule: "Production Schedule",
+  aiDemandForecast: "AI Demand Forecast", 
+  upcomingManufacturingPlans: "Upcoming manufacturing plans",
+  predictedDemandNext30Days: "Predicted demand for next 30 days",
+  units: "units",
+  confidence: "Confidence"
 };
 
 // Arabic translations for Egypt, Morocco, Saudi Arabia, UAE
@@ -168,9 +198,24 @@ const arabicTranslations: Translation = {
   inProgress: "قيد التنفيذ",
   
   currency: "جنيه",
-  volume: "متر مكعب",
+  volume: "متر مكعب", 
   weight: "كيلوغرام",
-  dimensions: "ميليمتر"
+  dimensions: "ميليمتر",
+  
+  // Dashboard Content
+  totalRevenue: "إجمالي الإيرادات",
+  activeDistributors: "الموزعون النشطون",
+  productsInCatalog: "المنتجات في الكتالوج", 
+  regionalSalesPerformance: "أداء المبيعات الإقليمية",
+  topPerformingProducts: "المنتجات الأعلى أداءً",
+  revenueBreakdownByProvince: "تفصيل الإيرادات حسب المحافظة",
+  bestSellingProducts: "منتجات كورنكس الأكثر مبيعاً هذا الشهر",
+  productionSchedule: "جدولة الإنتاج",
+  aiDemandForecast: "توقع الطلب بالذكاء الاصطناعي",
+  upcomingManufacturingPlans: "خطط التصنيع القادمة", 
+  predictedDemandNext30Days: "الطلب المتوقع للأيام الثلاثين القادمة",
+  units: "وحدات",
+  confidence: "الثقة"
 };
 
 // Spanish translations for Mexico, Spain, Argentina, Colombia, etc.
