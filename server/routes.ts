@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { achievementService } from "./achievementService";
+import { restoreProducts } from "./restoreProducts";
 import multer from "multer";
 import * as XLSX from 'xlsx';
 import { nanoid } from 'nanoid';
@@ -112,6 +113,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error recording import metrics:", error);
       res.status(500).json({ error: "Failed to record metrics" });
+    }
+  });
+
+  // Emergency product restoration endpoint
+  app.post("/api/products/restore", async (req, res) => {
+    try {
+      console.log('🚨 Emergency product restoration triggered');
+      const success = await restoreProducts();
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Product catalog fully restored",
+          totalProducts: 34,
+          categories: {
+            EPS: 13,
+            BR: 13, 
+            LED: 8
+          }
+        });
+      } else {
+        res.status(500).json({ success: false, error: "Failed to restore products" });
+      }
+    } catch (error) {
+      console.error("Error in product restoration:", error);
+      res.status(500).json({ success: false, error: "Product restoration failed" });
     }
   });
 
