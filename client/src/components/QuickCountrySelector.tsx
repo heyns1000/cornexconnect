@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Globe } from "lucide-react";
-import { useCountry } from "@/hooks/useCountryContext";
+import { useTranslation } from "@/hooks/useTranslation";
 import { SUPPORTED_COUNTRIES } from "@/lib/i18n";
 import {
   DropdownMenu,
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function QuickCountrySelector() {
-  const { currentCountry, setCountry } = useCountry();
+  const { currentCountry, changeCountry } = useTranslation();
 
   // Show top 8 most common countries for quick access
   const quickCountries = SUPPORTED_COUNTRIES.filter(country => 
@@ -19,7 +19,7 @@ export default function QuickCountrySelector() {
   );
 
   const handleCountryChange = (countryCode: string) => {
-    setCountry(countryCode);
+    changeCountry(countryCode);
   };
 
   return (
@@ -27,8 +27,8 @@ export default function QuickCountrySelector() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="flex items-center space-x-2 w-full justify-start">
           <Globe className="w-4 h-4" />
-          <span className="text-xl">{currentCountry.flag}</span>
-          <span className="text-sm font-medium">{currentCountry.name}</span>
+          <span className="text-xl">🌍</span>
+          <span className="text-sm font-medium">{currentCountry}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
@@ -37,7 +37,7 @@ export default function QuickCountrySelector() {
             key={country.code}
             onClick={() => handleCountryChange(country.code)}
             className={`flex items-center space-x-3 ${
-              currentCountry.code === country.code ? 'bg-blue-50' : ''
+              currentCountry === country.code ? 'bg-blue-50' : ''
             }`}
           >
             <span className="text-lg">{country.flag}</span>

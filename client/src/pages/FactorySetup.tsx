@@ -34,7 +34,7 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/currency";
 import { useToast } from "@/hooks/use-toast";
-import { useCountry } from "@/hooks/useCountryContext";
+import { useTranslation } from "@/hooks/useTranslation";
 import type { 
   FactorySetup, 
   ProductionMetrics, 
@@ -44,7 +44,7 @@ import type {
 
 export default function FactorySetup() {
   const { toast } = useToast();
-  const { translations: t } = useCountry();
+  const { t } = useTranslation();
   const [selectedFactory, setSelectedFactory] = useState<string | null>(null);
   const [newFactoryForm, setNewFactoryForm] = useState({
     name: '',
@@ -471,7 +471,7 @@ export default function FactorySetup() {
                   <div className="text-3xl font-bold text-green-600 mb-2">
                     {productionMetrics[0]?.efficiency || 0}%
                   </div>
-                  <Progress value={productionMetrics[0]?.efficiency || 0} className="mt-2" />
+                  <Progress value={Number(productionMetrics[0]?.efficiency) || 0} className="mt-2" />
                 </CardContent>
               </Card>
 

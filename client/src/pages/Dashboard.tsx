@@ -199,11 +199,11 @@ export default function Dashboard() {
   // Format currency for display based on country
   const formatCurrency = (value: string | number) => {
     const num = typeof value === 'string' ? parseFloat(value) : value;
-    const locale = currentCountry.code === 'ZA' ? 'en-ZA' : 
-                   currentCountry.code === 'EG' ? 'ar-EG' :
-                   currentCountry.code === 'TR' ? 'tr-TR' :
-                   currentCountry.code === 'DE' ? 'de-DE' :
-                   currentCountry.code === 'FR' ? 'fr-FR' :
+    const locale = currentCountry === 'ZA' ? 'en-ZA' : 
+                   currentCountry === 'EG' ? 'ar-EG' :
+                   currentCountry === 'TR' ? 'tr-TR' :
+                   currentCountry === 'DE' ? 'de-DE' :
+                   currentCountry === 'FR' ? 'fr-FR' :
                    'en-US';
     
     return new Intl.NumberFormat(locale, {
