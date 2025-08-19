@@ -460,7 +460,7 @@ export default function BulkImport() {
             </p>
             {/* Company Context */}
             <div className="flex items-center gap-2 mt-3 p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-              <Building2 className="w-4 h-4 text-emerald-600" />
+              <Package className="w-4 h-4 text-emerald-600" />
               <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
                 HOMEMART AFRICA (2022/854581/07) - R500,000 Credit Limit
               </span>
