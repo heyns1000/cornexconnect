@@ -70,20 +70,25 @@ export default function BulkImport() {
     mutationFn: async (files: File[]) => {
       const formData = new FormData();
       files.forEach((file, index) => {
-        formData.append(`files`, file);
+        formData.append('files', file);
       });
       
-      const response = await fetch("/api/bulk-import/upload", {
-        method: "POST",
+      const response = await fetch('/api/bulk-import/upload', {
+        method: 'POST',
         body: formData,
       });
+      
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
+      }
+      
       return response.json();
     },
     onSuccess: (data) => {
       console.log("Upload success:", data);
       toast({
         title: "Upload Successful!",
-        description: `Successfully processed ${data.processedFiles?.length || importFiles.length} files. ${data.message || 'Import completed successfully.'}`,
+        description: `Successfully processed ${data.totalFiles || importFiles.length} files. ${data.message || 'Import completed successfully.'}`,
       });
       
       // Start polling session status if we have a session ID

@@ -1218,250 +1218,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create import session
       const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      // Create session directly in database with required name field
+      
+      // Create session directly in database
       const [session] = await db.insert(bulkImportSessions).values({
         id: sessionId,
-        name: `Bulk Import ${new Date().toISOString()}`,
+        name: `Client Routes Import - ${new Date().toLocaleDateString()}`,
         totalFiles: req.files.length,
         processedFiles: 0,
         totalImported: 0,
-        status: "pending",
-        files: [],
+        status: "processing",
+        files: req.files.map((f: any) => ({
+          id: `${f.originalname}_${Date.now()}`,
+          name: f.originalname,
+          status: "pending",
+          progress: 0
+        })),
         createdAt: new Date()
       }).returning();
 
-      const processedFiles = [];
+      console.log("Created session:", session.id);
+      
+      // Process each file immediately
+      let processedFiles = 0;
       let totalImported = 0;
+      const fileResults = [];
 
-      // Process each file
       for (const file of req.files) {
-        console.log(`Processing file: ${file.originalname}`);
-        
         try {
-          const fileId = `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          console.log(`Processing file: ${file.originalname}`);
           
-          // Add file to session tracking (in memory for now)
-          const importFile = {
-            id: fileId,
-            name: file.originalname,
-            status: "processing",
-            progress: 0,
-            result: null
-          };
-
-          // Process Excel file - read ALL data including empty cells
+          // Process Excel/CSV file
           const workbook = XLSX.read(file.buffer, { type: 'buffer' });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
           
-          // Get full range to capture all data
-          const range = worksheet['!ref'] ? XLSX.utils.decode_range(worksheet['!ref']) : null;
-          console.log(`Worksheet range: ${worksheet['!ref']}, Total rows: ${range ? range.e.r + 1 : 'unknown'}`);
-          
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
             header: 1, 
             defval: "", 
-            range: 0,
             raw: false
           });
 
           console.log(`Found ${jsonData.length} rows in ${file.originalname}`);
 
           let validRows = 0;
-          let totalRows = jsonData.length;
-          const errors = [];
-
-          // Auto-detect Excel structure and standardize all formats
-          console.log(`Processing ${jsonData.length} rows from ${file.originalname}...`);
           
-          // Detect column structure from first few rows
-          const detectedColumns = detectExcelStructure(jsonData.slice(0, 5));
-          console.log(`Detected structure for ${file.originalname}:`, detectedColumns);
-          
-          for (let i = 0; i < jsonData.length; i++) {
+          // Process each row as a store/route entry
+          for (let i = 1; i < jsonData.length; i++) { // Skip header row
             const row = jsonData[i];
             
-            try {
-              // Direct extraction from row array for maximum coverage
-              let storeData = null;
-              let storeName = null;
+            if (Array.isArray(row) && row.length > 0 && row[0] && String(row[0]).trim()) {
+              const storeName = String(row[0]).trim();
               
-              // Handle both array and object formats
-              if (Array.isArray(row)) {
-                storeName = row[0];
-              } else if (row && typeof row === 'object') {
-                storeName = row['Company Name'] || row['STORE NAME'] || row['Store Name'] || row['store_name'] || Object.values(row)[0];
-              }
-              
-              // Convert to string and validate
-              if (storeName && storeName !== null && storeName !== undefined) {
-                const cleanStoreName = String(storeName).trim();
-                
-                // Accept ANY non-empty string that's not a header
-                if (cleanStoreName && 
-                    cleanStoreName.length > 0 && 
-                    cleanStoreName !== 'Company Name' && 
-                    cleanStoreName !== 'STORE NAME' && 
-                    cleanStoreName !== 'Store Name' &&
-                    !cleanStoreName.toLowerCase().includes('header') &&
-                    !cleanStoreName.toLowerCase().includes('column')) {
-                  
-                  const provinceValue = Array.isArray(row) ? row[1] : (row['PROVINCE'] || row['Province']);
-                  
-                  storeData = {
-                    storeName: cleanStoreName,
-                    province: (provinceValue && String(provinceValue).trim()) || 'Unknown',
-                    address: null,
-                    city: null,
-                    contactPerson: null,
-                    phone: null,
-                    email: null,
-                    storeType: 'hardware'
-                  };
-                }
-              }
-              
-              if (storeData && storeData.storeName && 
-                  storeData.storeName !== 'STORE NAME' && 
-                  storeData.storeName !== 'Company Name' &&
-                  storeData.storeName.length > 1 &&
-                  typeof storeData.storeName === 'string' &&
-                  storeData.storeName.trim() !== '' &&
-                  !storeData.storeName.toUpperCase().includes('HEADER') &&
-                  !storeData.storeName.toUpperCase().includes('COLUMN')) {
-                
-                // Standardize province and city naming
-                const standardizedData = standardizeLocationData(storeData);
-                
-                // Generate unique store code to avoid duplicates
-                const uniqueStoreCode = `${sessionId}_${i}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-                
-                const storeToCreate = {
-                  storeCode: uniqueStoreCode,
-                  storeName: standardizedData.storeName,
-                  address: standardizedData.address || 'Not Specified',
-                  contactPerson: standardizedData.contactPerson || null,
-                  phone: standardizedData.phone || null,
-                  email: standardizedData.email || null,
-                  province: standardizedData.province || 'Unknown',
-                  city: standardizedData.city || 'Unknown',
-                  creditLimit: '0.00',
-                  storeType: standardizedData.storeType || 'hardware',
-                  isActive: true
-                };
-
-                // Create excel_uploads record first to satisfy foreign key constraint
-                let excelUploadId;
+              if (storeName && storeName !== 'Store Name' && storeName !== 'STORE NAME') {
                 try {
-                  const excelUpload = await storage.createExcelUpload({
-                    fileName: file.originalname,
-                    mappedName: file.originalname,
-                    fileSize: file.size,
-                    status: "processing"
+                  // Create hardware store entry
+                  const storeData = {
+                    storeName: storeName,
+                    province: (row[1] && String(row[1]).trim()) || 'Unknown',
+                    address: (row[2] && String(row[2]).trim()) || '',
+                    city: (row[3] && String(row[3]).trim()) || '',
+                    contactPerson: (row[4] && String(row[4]).trim()) || '',
+                    phone: (row[5] && String(row[5]).trim()) || '',
+                    storeType: 'hardware',
+                    source: `Bulk Import - ${file.originalname}`,
+                    importedAt: new Date().toISOString()
+                  };
+
+                  await storage.createHardwareStore({
+                    ...storeData,
+                    creditLimit: 0,
+                    status: 'active'
                   });
-                  excelUploadId = excelUpload.id;
+                  
+                  validRows++;
+                  totalImported++;
                 } catch (error) {
-                  // Excel upload record might already exist, try to get existing one
-                  const existingUploads = await storage.getExcelUploads();
-                  const existing = existingUploads.find(u => u.fileName === file.originalname);
-                  excelUploadId = existing?.id || sessionId;
-                }
-
-                // Store in Excel-specific tracking table with proper uploadId
-                await storage.createHardwareStoreFromExcel({
-                  uploadId: excelUploadId,
-                  storeName: standardizedData.storeName,
-                  storeAddress: standardizedData.address,
-                  cityTown: standardizedData.city,
-                  province: standardizedData.province,
-                  contactPerson: standardizedData.contactPerson,
-                  phoneNumber: standardizedData.phone,
-                  repName: '',
-                  visitFrequency: 'monthly',
-                  mappedToCornex: false
-                });
-
-                // Create store directly without duplicate check for Excel imports
-                // (since each Excel might have legitimate duplicate names in different areas)
-                await storage.createHardwareStore(storeToCreate);
-                validRows++;
-                totalImported++;
-                
-                if (validRows <= 5) {
-                  console.log(`✅ Imported: ${standardizedData.storeName} in ${standardizedData.city}, ${standardizedData.province}`);
+                  console.error(`Error creating store from row ${i}:`, error);
                 }
               }
-            } catch (rowError) {
-              console.error(`Error processing row ${i + 1}:`, rowError.message);
-              errors.push(`Row ${i + 1}: ${rowError.message}`);
             }
           }
 
-          // File processing completed (tracking in memory for now)
-          importFile.status = "completed";
-          importFile.progress = 100;
-          importFile.result = {
-            totalRows,
-            validRows,
-            errors,
-            preview: jsonData.slice(0, 5) // First 5 rows as preview
-          };
-
-          processedFiles.push({
-            id: fileId,
-            name: file.originalname,
-            status: "completed",
-            totalRows,
-            validRows,
-            errors: errors.length
+          fileResults.push({
+            fileName: file.originalname,
+            totalRows: jsonData.length,
+            validRows: validRows,
+            status: 'completed'
           });
-
-        } catch (fileError) {
-          console.error(`Error processing file ${file.originalname}:`, fileError);
           
-          // File processing failed (tracking in memory for now)
-          importFile.status = "error";
-          importFile.progress = 0;
-          importFile.result = {
+          processedFiles++;
+          
+        } catch (error) {
+          console.error(`Error processing file ${file.originalname}:`, error);
+          fileResults.push({
+            fileName: file.originalname,
             totalRows: 0,
             validRows: 0,
-            errors: [fileError.message],
-            preview: []
-          };
-
-          processedFiles.push({
-            id: fileId,
-            name: file.originalname,
-            status: "error",
-            totalRows: 0,
-            validRows: 0,
-            errors: 1
+            status: 'error',
+            error: error.message
           });
         }
       }
 
-      // Update session as completed directly in database
-      await db.update(bulkImportSessions).set({
-        processedFiles: req.files.length,
-        status: "completed",
-        totalImported,
-        updatedAt: new Date()
-      }).where(eq(bulkImportSessions.id, sessionId));
+      // Update session in database
+      await db.update(bulkImportSessions)
+        .set({
+          processedFiles: processedFiles,
+          totalImported: totalImported,
+          status: "completed",
+          files: fileResults
+        })
+        .where(eq(bulkImportSessions.id, sessionId));
 
-      console.log(`Bulk import completed: ${processedFiles.length} files processed`);
+      console.log(`Bulk import completed: ${processedFiles} files processed, ${totalImported} stores imported`);
 
       res.json({
-        success: true,
-        sessionId,
-        processedFiles,
-        message: `Successfully processed ${processedFiles.length} files`
+        sessionId: sessionId,
+        message: `Successfully processed ${processedFiles} files with ${totalImported} stores imported`,
+        totalFiles: req.files.length,
+        processedFiles: processedFiles,
+        totalImported: totalImported,
+        files: fileResults
       });
 
     } catch (error) {
-      console.error("Error in bulk import process:", error);
-      res.status(500).json({ error: "Bulk import failed" });
+      console.error("Error processing bulk import:", error);
+      res.status(500).json({ error: "Failed to process bulk import" });
     }
   });
+
+
 
   app.get("/api/bulk-import/history", async (req, res) => {
     try {
