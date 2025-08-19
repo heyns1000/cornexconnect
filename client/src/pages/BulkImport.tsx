@@ -113,10 +113,17 @@ export default function BulkImport() {
           processedFiles: importFiles.length,
           status: "completed",
           createdAt: new Date().toISOString(),
-          files: importFiles.map(file => ({
+          files: importFiles.map((file, index) => ({
             ...file,
             status: "completed" as const,
-            progress: 100
+            progress: 100,
+            result: {
+              totalRows: data.results?.[index]?.totalRows || 0,
+              validRows: data.results?.[index]?.validRows || 0,
+              importedRows: data.results?.[index]?.importedRows || 0,
+              errors: [],
+              preview: data.results?.[index]?.preview || []
+            }
           }))
         });
 
@@ -274,7 +281,7 @@ export default function BulkImport() {
 
     session.files.forEach(file => {
       csvData.push([
-        file.file.name || 'Unknown',
+        file.file?.name || 'Unknown',
         file.status,
         `${file.progress}%`,
         file.result?.totalRows?.toString() || '0',
@@ -423,9 +430,9 @@ export default function BulkImport() {
                           <div className="flex items-center gap-3">
                             {getStatusIcon(file.status)}
                             <div>
-                              <p className="font-medium">{file.file.name}</p>
+                              <p className="font-medium">{file.file?.name || `File ${index + 1}`}</p>
                               <p className="text-sm text-muted-foreground">
-                                {(file.file.size / 1024 / 1024).toFixed(2)} MB
+                                {file.file?.size ? (file.file.size / 1024 / 1024).toFixed(2) + ' MB' : 'Unknown size'}
                               </p>
                             </div>
                           </div>
@@ -489,7 +496,7 @@ export default function BulkImport() {
                       {currentSession.files.map((file) => (
                         <div key={file.id} className="p-3 rounded-lg border border-white/10 bg-white/5">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium">{file.file.name}</span>
+                            <span className="font-medium">{file.file?.name || `File ${index + 1}`}</span>
                             {getStatusIcon(file.status)}
                           </div>
                           {file.status === "processing" && (
@@ -576,7 +583,7 @@ export default function BulkImport() {
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
                                   {getStatusIcon(file.status)}
-                                  <span className="font-medium">{file.file.name || `File ${index + 1}`}</span>
+                                  <span className="font-medium">{file.file?.name || `File ${index + 1}`}</span>
                                 </div>
                                 <Badge variant="outline">{file.status}</Badge>
                               </div>
@@ -830,7 +837,7 @@ export default function BulkImport() {
                     {selectedSessionDetails.files.map((file, index) => (
                       <div key={file.id || index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium">{file.file.name || `File ${index + 1}`}</span>
+                          <span className="font-medium">{file.file?.name || `File ${index + 1}`}</span>
                           <div className="flex items-center gap-2">
                             {getStatusIcon(file.status)}
                             <Badge variant="outline">{file.status}</Badge>
