@@ -1271,24 +1271,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               if (storeName && storeName !== 'Store Name' && storeName !== 'STORE NAME') {
                 try {
+                  // Generate unique store code
+                  const storeCode = `BULK_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+                  
                   // Create hardware store entry
                   const storeData = {
+                    storeCode: storeCode,
                     storeName: storeName,
-                    province: (row[1] && String(row[1]).trim()) || 'Unknown',
                     address: (row[2] && String(row[2]).trim()) || '',
-                    city: (row[3] && String(row[3]).trim()) || '',
-                    contactPerson: (row[4] && String(row[4]).trim()) || '',
-                    phone: (row[5] && String(row[5]).trim()) || '',
+                    contactPerson: (row[4] && String(row[4]).trim()) || null,
+                    phone: (row[5] && String(row[5]).trim()) || null,
+                    email: (row[6] && String(row[6]).trim()) || null,
+                    province: (row[1] && String(row[1]).trim()) || 'Unknown',
+                    city: (row[3] && String(row[3]).trim()) || 'Unknown',
+                    creditLimit: '0.00',
                     storeType: 'hardware',
-                    source: `Bulk Import - ${file.originalname}`,
-                    importedAt: new Date().toISOString()
+                    isActive: true
                   };
 
-                  await storage.createHardwareStore({
-                    ...storeData,
-                    creditLimit: 0,
-                    status: 'active'
-                  });
+                  await storage.createHardwareStore(storeData);
                   
                   validRows++;
                   totalImported++;
