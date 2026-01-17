@@ -1,0 +1,11 @@
+customer_code,name,email,phone,address,city,country,preferred_currency
+CUST-001,ABC Builders,info@abcbuilders.co.za,+27123456789,123 Main Street,Pretoria,South Africa,ZAR
+CUST-002,XYZ Construction,contact@xyzconstruct.co.za,+27234567890,456 Oak Avenue,Johannesburg,South Africa,ZAR
+CUST-003,Superior Interiors,hello@superiorinteriors.co.za,+27345678901,789 Pine Road,Cape Town,South Africa,ZAR
+CUST-004,Elite Renovations,sales@elitereno.co.za,+27456789012,321 Cedar Lane,Durban,South Africa,ZAR
+CUST-005,Prime Properties,info@primeproperties.co.za,+27567890123,654 Maple Drive,Port Elizabeth,South Africa,ZAR
+CUST-006,Luxury Homes SA,contact@luxuryhomes.co.za,+27678901234,987 Birch Street,Bloemfontein,South Africa,ZAR
+CUST-007,Modern Build Co,hello@modernbuild.co.za,+27789012345,147 Elm Avenue,East London,South Africa,ZAR
+CUST-008,Heritage Restorations,info@heritagerestore.co.za,+27890123456,258 Willow Road,Polokwane,South Africa,ZAR
+CUST-009,Skyline Developers,sales@skylinedev.co.za,+27901234567,369 Ash Lane,Kimberley,South Africa,ZAR
+CUST-010,Prestige Interiors,contact@prestigeint.co.za,+27112345678,741 Spruce Drive,Nelspruit,South Africa,ZAR

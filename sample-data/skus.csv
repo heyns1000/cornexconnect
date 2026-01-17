@@ -1,0 +1,32 @@
+sku_code,name,description,category,unit_price,currency,stock_quantity,reorder_level
+CRN-001,Classic Cornice 100mm,Standard EPS cornice for interior use,Interior,125.50,ZAR,150,20
+CRN-002,Premium Cornice 150mm,Premium EPS cornice with detailed design,Interior,189.99,ZAR,120,15
+CRN-003,Deluxe Cornice 200mm,Deluxe EPS cornice for high ceilings,Interior,245.00,ZAR,80,10
+CRN-004,Modern Cornice 120mm,Contemporary EPS cornice design,Interior,155.75,ZAR,200,25
+CRN-005,Victorian Cornice 180mm,Victorian-style EPS cornice,Interior,210.50,ZAR,95,12
+CRN-006,Minimalist Cornice 80mm,Simple clean line EPS cornice,Interior,99.99,ZAR,300,30
+CRN-007,Baroque Cornice 220mm,Ornate baroque style EPS cornice,Interior,275.00,ZAR,60,8
+CRN-008,Art Deco Cornice 140mm,Art deco inspired EPS cornice,Interior,178.25,ZAR,110,15
+CRN-009,Colonial Cornice 160mm,Colonial style EPS cornice,Interior,195.50,ZAR,130,18
+CRN-010,Contemporary Cornice 90mm,Modern contemporary EPS cornice,Interior,115.00,ZAR,250,28
+CRN-011,Gothic Cornice 190mm,Gothic architectural EPS cornice,Interior,230.75,ZAR,70,10
+CRN-012,Craftsman Cornice 130mm,Craftsman style EPS cornice,Interior,168.00,ZAR,140,20
+CRN-013,Mediterranean Cornice 170mm,Mediterranean style EPS cornice,Interior,205.25,ZAR,100,14
+CRN-014,Industrial Cornice 110mm,Industrial modern EPS cornice,Interior,145.50,ZAR,180,22
+CRN-015,French Cornice 210mm,French provincial EPS cornice,Interior,265.00,ZAR,65,9
+CRN-016,Tuscan Cornice 150mm,Tuscan villa style EPS cornice,Interior,192.75,ZAR,125,16
+CRN-017,Scandinavian Cornice 100mm,Nordic minimalist EPS cornice,Interior,135.00,ZAR,220,26
+CRN-018,Spanish Cornice 180mm,Spanish revival EPS cornice,Interior,218.50,ZAR,90,12
+CRN-019,Georgian Cornice 140mm,Georgian period EPS cornice,Interior,175.25,ZAR,160,20
+CRN-020,Mid-Century Cornice 120mm,Mid-century modern EPS cornice,Interior,152.00,ZAR,190,24
+CRN-021,Regency Cornice 200mm,Regency style EPS cornice,Interior,248.75,ZAR,75,10
+CRN-022,Federal Cornice 130mm,Federal period EPS cornice,Interior,165.50,ZAR,145,18
+CRN-023,Queen Anne Cornice 190mm,Queen Anne style EPS cornice,Interior,235.00,ZAR,85,11
+CRN-024,Prairie Cornice 110mm,Prairie school EPS cornice,Interior,142.25,ZAR,210,25
+CRN-025,Mission Cornice 160mm,Mission style EPS cornice,Interior,198.00,ZAR,115,15
+CRN-026,Tudor Cornice 170mm,Tudor revival EPS cornice,Interior,212.50,ZAR,105,14
+CRN-027,Italianate Cornice 150mm,Italianate style EPS cornice,Interior,188.75,ZAR,135,17
+CRN-028,Beaux-Arts Cornice 220mm,Beaux-Arts style EPS cornice,Interior,285.00,ZAR,55,8
+CRN-029,Streamline Cornice 100mm,Streamline Moderne EPS cornice,Interior,128.50,ZAR,240,28
+CRN-030,Transitional Cornice 140mm,Transitional style EPS cornice,Interior,172.00,ZAR,155,19
+CRN-031,Eclectic Cornice 180mm,Eclectic mix style EPS cornice,Interior,215.25,ZAR,95,13
