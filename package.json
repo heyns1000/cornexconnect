@@ -1,0 +1,20 @@
+{
+  "name": "cornexconnect",
+  "version": "2.6.0",
+  "description": "CornexConnect™ v2.6 - EPS Cornice Manufacturing Platform",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "start": "cd server && npm start"
+  },
+  "keywords": ["EPS", "cornice", "manufacturing", "logistics", "RouteMesh", "Unitrans"],
+  "author": "CornexConnect",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
