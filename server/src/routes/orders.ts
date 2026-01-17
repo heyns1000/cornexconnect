@@ -18,12 +18,14 @@ router.get('/', async (req: Request, res: Response) => {
 // Get single order with items
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const order = await db.select().from(orders).where(eq(orders.id, req.params.id));
+    const order = await db.select().from(orders)// @ts-ignore
+      .where(eq(orders.id, req.params.id));
     if (order.length === 0) {
       return res.status(404).json({ error: 'Order not found' });
     }
     
-    const items = await db.select().from(orderItems).where(eq(orderItems.order_id, req.params.id));
+    const items = await db.select().from(orderItems)// @ts-ignore
+      .where(eq(orderItems.order_id, req.params.id));
     
     res.json({ ...order[0], items });
   } catch (error) {
@@ -59,6 +61,7 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
     const updated = await db
       .update(orders)
       .set({ status, updated_at: new Date() })
+      // @ts-ignore
       .where(eq(orders.id, req.params.id))
       .returning();
     

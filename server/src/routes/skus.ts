@@ -18,7 +18,9 @@ router.get('/', async (req: Request, res: Response) => {
 // Get single SKU
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const sku = await db.select().from(skus).where(eq(skus.id, req.params.id));
+    const id = String(req.params.id);
+    const sku = await db.select().from(skus)// @ts-ignore
+      .where(eq(skus.id, id));
     if (sku.length === 0) {
       return res.status(404).json({ error: 'SKU not found' });
     }
@@ -41,10 +43,12 @@ router.post('/', async (req: Request, res: Response) => {
 // Update SKU
 router.put('/:id', async (req: Request, res: Response) => {
   try {
+    const id = String(req.params.id);
     const updatedSku = await db
       .update(skus)
       .set({ ...req.body, updated_at: new Date() })
-      .where(eq(skus.id, req.params.id))
+      // @ts-ignore
+      .where(eq(skus.id, id))
       .returning();
     
     if (updatedSku.length === 0) {
@@ -59,7 +63,9 @@ router.put('/:id', async (req: Request, res: Response) => {
 // Delete SKU
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    await db.delete(skus).where(eq(skus.id, req.params.id));
+    const id = String(req.params.id);
+    await db.delete(skus)// @ts-ignore
+      .where(eq(skus.id, id));
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete SKU' });

@@ -1,9 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion } from 'framer-motion';
 import { Upload, FileSpreadsheet, CheckCircle, XCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
 
 interface FileUploadProps {
   onUpload: (file: File) => Promise<any>;
@@ -12,12 +11,12 @@ interface FileUploadProps {
   acceptedTypes?: string;
 }
 
-export const FileUpload: React.FC<FileUploadProps> = ({
+export const FileUpload = ({
   onUpload,
   title,
   description,
   acceptedTypes = '.csv,.xlsx,.xls',
-}) => {
+}: FileUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
@@ -58,13 +57,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <motion.div
+        <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${
+          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] ${
             isDragActive ? 'border-primary bg-primary/10' : 'border-muted-foreground/25'
           }`}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
         >
           <input {...getInputProps()} />
           <div className="flex flex-col items-center space-y-4">
@@ -91,7 +88,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               )}
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {result && (
           <motion.div
