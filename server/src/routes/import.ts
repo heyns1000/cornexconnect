@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import csvParser from 'csv-parser';
 import { db } from '../db';
 import { skus, customers, orders, importHistory } from '../db/schema';
@@ -58,9 +58,28 @@ router.post('/skus', upload.single('file'), async (req: Request, res: Response) 
     const fileType = req.file.mimetype.includes('csv') ? 'csv' : 'xlsx';
 
     if (fileType === 'xlsx') {
-      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-      const sheetName = workbook.SheetNames[0];
-      data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(req.file.buffer as any);
+      const worksheet = workbook.worksheets[0];
+      
+      // Get headers from first row
+      const headers: string[] = [];
+      worksheet.getRow(1).eachCell((cell) => {
+        headers.push(cell.value?.toString() || '');
+      });
+      
+      // Convert rows to JSON objects
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return; // Skip header row
+        const rowData: any = {};
+        row.eachCell((cell, colNumber) => {
+          const header = headers[colNumber - 1];
+          if (header) {
+            rowData[header] = cell.value;
+          }
+        });
+        data.push(rowData);
+      });
     } else {
       // Parse CSV
       const stream = Readable.from(req.file.buffer.toString());
@@ -124,9 +143,28 @@ router.post('/customers', upload.single('file'), async (req: Request, res: Respo
     const fileType = req.file.mimetype.includes('csv') ? 'csv' : 'xlsx';
 
     if (fileType === 'xlsx') {
-      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-      const sheetName = workbook.SheetNames[0];
-      data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(req.file.buffer as any);
+      const worksheet = workbook.worksheets[0];
+      
+      // Get headers from first row
+      const headers: string[] = [];
+      worksheet.getRow(1).eachCell((cell) => {
+        headers.push(cell.value?.toString() || '');
+      });
+      
+      // Convert rows to JSON objects
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return; // Skip header row
+        const rowData: any = {};
+        row.eachCell((cell, colNumber) => {
+          const header = headers[colNumber - 1];
+          if (header) {
+            rowData[header] = cell.value;
+          }
+        });
+        data.push(rowData);
+      });
     } else {
       const stream = Readable.from(req.file.buffer.toString());
       await new Promise((resolve, reject) => {
