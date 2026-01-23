@@ -38,7 +38,7 @@ class BanimalConnector {
         console.log('✅ Banimal signal established - uninterrupted connection active');
         console.log(`🌐 Connected to: ${this.config.workerUrl}`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('❌ Banimal signal failed:', error instanceof Error ? error.message : 'Unknown error');
       this.signalActive = false;
     }
@@ -116,7 +116,7 @@ class BanimalConnector {
         synced: brands.length,
         errors: []
       };
-    } catch (error) {
+    } catch (error: unknown) {
       return {
         success: false,
         synced: 0,
@@ -160,7 +160,7 @@ class BanimalConnector {
           message: 'Brand webhook received',
           signal_type: 'uninterrupted'
         });
-      } catch (error) {
+      } catch (error: unknown) {
         res.status(500).json({
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error'
