@@ -32,6 +32,7 @@ import ProductLabels from "@/pages/ProductLabels";
 import StoreMapVisualization from "@/pages/StoreMapVisualization";
 import Profile from "@/pages/Profile";
 import Achievements from "@/pages/Achievements";
+import PlanetChange from "@/pages/PlanetChange";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import { FruitfulAssistChatbot, FruitfulAssistFloatingButton } from "@/components/FruitfulAssistChatbot";
@@ -99,6 +100,7 @@ function Router() {
         <Route path="/profile" component={Profile} />
         <Route path="/achievements" component={Achievements} />
         <Route path="/brands/:id" component={BrandDetail} />
+        <Route path="/planet-change" component={PlanetChange} />
       </Switch>
     </PageTransition>
   );

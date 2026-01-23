@@ -11,10 +11,18 @@ import { nanoid } from 'nanoid';
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 import { bulkImportSessions } from "@shared/schema";
+import fruitfulPlanetRoutes from "./src/routes/fruitfulPlanet";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
+
+  // ========================================
+  // FRUITFUL PLANET CHANGE - QUEENS NEST
+  // 93 GitHub Repositories Integration
+  // Rhino Strikes + Ant Lattice Execution
+  // ========================================
+  app.use("/api/fruitful-planet", fruitfulPlanetRoutes);
 
   // Simple working bulk import 
   const upload = multer({
