@@ -12,6 +12,7 @@ import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 import { bulkImportSessions } from "@shared/schema";
 import fruitfulPlanetRoutes from "./src/routes/fruitfulPlanet";
+import buildmartSignalRoutes from "./src/routes/buildmartSignal";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -23,6 +24,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rhino Strikes + Ant Lattice Execution
   // ========================================
   app.use("/api/fruitful-planet", fruitfulPlanetRoutes);
+
+  // ========================================
+  // BUILDMART AFRICA - SIGNAL RELAY
+  // Buyer App Signal Sync (No IP Exposure)
+  // Signal Uninterrupted → Database
+  // ========================================
+  app.use("/relay/cornexconnect", buildmartSignalRoutes);
 
   // Simple working bulk import 
   const upload = multer({

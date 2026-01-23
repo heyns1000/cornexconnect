@@ -1,0 +1,9 @@
+{
+  "name": "CORNEXCONNECT™ - 2026 Official ",
+  "description": "Industrial grade procurement and pricelist logic for the Pretoria Central Distribution Hub. Featuring automated MOQ verification and tier-based pricing gates.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera",
+    "microphone"
+  ]
+}
