@@ -13,6 +13,7 @@ import { AnalyticsDashboard } from './components/AnalyticsDashboard.tsx';
 import { AuditVault } from './components/AuditVault.tsx';
 import { FruitfulAssist } from './components/FruitfulAssist.tsx';
 import { AdGenerator } from './components/AdGenerator.tsx';
+import { getReorderVelocity } from './reorderAnalysis.ts';
 
 const STORAGE_KEY = 'CORNEXCONNECT_ORDER_DRAFT';
 const DB_KEY = 'CORNEXCONNECT_TRANS_DB';
@@ -274,20 +275,20 @@ const App: React.FC = () => {
       alert("SELECT PRICING TIER FIRST.");
       return;
     }
-    
-    const historicalMoverCodes = new Set<string>();
-    orderHistory.forEach(txn => {
-      txn.items.forEach(item => historicalMoverCodes.add(item.code));
-    });
+
+    // Only project SKUs that have been REORDERED (true demand signal)
+    // Opening order SKUs that were never reordered = not projected
+    const reorderStats = getReorderVelocity(orderHistory);
 
     const newQuantities: Record<string, number> = {};
     INVENTORY_REGISTRY.forEach(item => {
-      if (historicalMoverCodes.has(item.code)) {
+      const stats = reorderStats[item.code];
+      if (stats?.isReordered) {
         const price = selectedTier === TierLevel.FACTORY_BULK ? item.tier1Price :
                       selectedTier === TierLevel.TRADE_WHOLESALE ? item.tier2Price :
                       item.tier3Price;
         const boxVal = item.boxMeterage * price;
-        
+
         let targetQty = 0;
         if (selectedTier === TierLevel.FACTORY_BULK) {
           targetQty = Math.ceil(29000 / boxVal);
@@ -302,7 +303,7 @@ const App: React.FC = () => {
     });
 
     setQuantities(newQuantities);
-    alert("Global Intelligence Projection Applied Successfully.");
+    alert("Reorder Intelligence Projection Applied — Opening order SKUs excluded.");
   };
 
   const renderContent = () => {
