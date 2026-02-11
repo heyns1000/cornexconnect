@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { achievementService } from "./achievementService";
 import { restoreProducts } from "./restoreProducts";
-import { restoreHardwareStores } from "./restoreStores";
+import { restoreHardwareStores, getExtractedStoreData } from "./restoreStores";
 import multer from "multer";
 import * as XLSX from 'xlsx';
 import { nanoid } from 'nanoid';
@@ -197,12 +197,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stores = await storage.getHardwareStores();
       const products = await storage.getProducts();
       const distributors = await storage.getDistributors();
-      
+      const extracted = getExtractedStoreData();
+
       res.json({
-        hardwareStores: stores.length,
+        hardwareStores: stores.length || extracted?.metadata.totalStores || 0,
         products: products.length,
         distributors: distributors.length,
-        revenue: 57800000, // R57.8M 
+        revenue: 57800000, // R57.8M
+        provinces: extracted ? Object.keys(extracted.metadata.byProvince).length : 9,
+        territories: extracted?.metadata.territories || 0,
+        cities: extracted?.metadata.cities || 0,
+        salesReps: extracted?.salesReps || [],
         timestamp: new Date().toISOString()
       });
     } catch (error) {
@@ -211,7 +216,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Emergency hardware stores restoration endpoint  
+  // Hardware Store Analytics - real territory/province/rep data from spreadsheets
+  app.get("/api/hardware-stores/analytics", async (req, res) => {
+    try {
+      const extracted = getExtractedStoreData();
+      const stores = await storage.getHardwareStores();
+
+      if (extracted) {
+        const byProvince = extracted.metadata.byProvince;
+        const saProvinces = ['GAUTENG', 'LIMPOPO', 'KWAZULU-NATAL', 'MPUMALANGA', 'WESTERN CAPE', 'EASTERN CAPE', 'NORTH WEST', 'FREE STATE', 'NORTHERN CAPE'];
+        const internationalRegions = Object.keys(byProvince).filter(p => !saProvinces.includes(p) && p !== 'UNKNOWN');
+
+        res.json({
+          totalStores: stores.length || extracted.metadata.totalStores,
+          provinces: Object.keys(byProvince).length,
+          saProvinces: saProvinces.filter(p => byProvince[p]),
+          internationalRegions,
+          territories: extracted.metadata.territories,
+          cities: extracted.metadata.cities,
+          retailGroups: extracted.retailGroups,
+          salesReps: extracted.salesReps,
+          byProvince,
+          byStoreType: {
+            independent: extracted.stores.filter(s => s.storeType === 'independent').length,
+            chain: extracted.stores.filter(s => s.storeType === 'chain').length,
+            franchise: extracted.stores.filter(s => s.storeType === 'franchise').length,
+          },
+          byStoreSize: {
+            small: extracted.stores.filter(s => s.storeSize === 'small').length,
+            medium: extracted.stores.filter(s => s.storeSize === 'medium').length,
+            large: extracted.stores.filter(s => s.storeSize === 'large').length,
+          },
+          totalMonthlyPotential: extracted.stores.reduce((sum, s) => sum + (s.monthlyPotential || 0), 0),
+          topTerritories: Object.entries(
+            extracted.stores.reduce((acc: Record<string, number>, s) => {
+              if (s.territory) acc[s.territory] = (acc[s.territory] || 0) + 1;
+              return acc;
+            }, {})
+          ).sort((a, b) => b[1] - a[1]).slice(0, 20).map(([territory, count]) => ({ territory, count })),
+        });
+      } else {
+        res.json({
+          totalStores: stores.length,
+          provinces: 9,
+          territories: 0,
+          cities: 0,
+          retailGroups: [],
+          salesReps: [],
+          byProvince: {},
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching store analytics:", error);
+      res.status(500).json({ error: "Failed to fetch store analytics" });
+    }
+  });
+
+  // Emergency hardware stores restoration endpoint
   app.post("/api/hardware-stores/restore", async (req, res) => {
     try {
       console.log('🚨 Emergency hardware stores restoration triggered');

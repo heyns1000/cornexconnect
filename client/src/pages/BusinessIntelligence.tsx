@@ -61,6 +61,10 @@ export default function BusinessIntelligence() {
     queryKey: ["/api/inventory"],
   });
 
+  const { data: storeAnalytics = {} as any } = useQuery({
+    queryKey: ["/api/hardware-stores/analytics"],
+  });
+
   // Calculate key performance indicators
   const kpis = {
     totalRevenue: (regionalMetrics && Array.isArray(regionalMetrics)) 
@@ -389,16 +393,38 @@ export default function BusinessIntelligence() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2">
               <CardHeader>
-                <CardTitle>Provincial Performance Map</CardTitle>
+                <CardTitle>Provincial Store Distribution</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-80 flex items-center justify-center text-gray-500">
-                  <div className="text-center">
-                    <BarChart3 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>Interactive Regional Map</p>
-                    <p className="text-sm">Provincial sales and distributor performance</p>
+                {(storeAnalytics as any)?.byProvince ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {Object.entries((storeAnalytics as any).byProvince as Record<string, number>)
+                      .sort((a, b) => (b[1] as number) - (a[1] as number))
+                      .map(([province, count]) => {
+                        const max = Object.values((storeAnalytics as any).byProvince as Record<string, number>).reduce((a, b) => Math.max(a, b), 0);
+                        const intensity = Math.round((count as number / max) * 100);
+                        return (
+                          <div key={province} className="p-3 rounded-lg bg-gray-50 border">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">{province}</span>
+                              <span className="text-sm font-bold">{(count as number).toLocaleString()}</span>
+                            </div>
+                            <Progress value={intensity} className="h-2" />
+                            <p className="text-xs text-gray-500 mt-1">
+                              R{(((count as number) * ((storeAnalytics as any).totalMonthlyPotential || 0) / ((storeAnalytics as any).totalStores || 1)) / 1000).toFixed(0)}K monthly potential
+                            </p>
+                          </div>
+                        );
+                      })}
                   </div>
-                </div>
+                ) : (
+                  <div className="h-80 flex items-center justify-center text-gray-500">
+                    <div className="text-center">
+                      <BarChart3 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p>Loading provincial data...</p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -500,10 +526,10 @@ export default function BusinessIntelligence() {
             <div>
               <h3 className="text-lg font-semibold mb-2">🧠 Business Intelligence Insights</h3>
               <div className="space-y-2 text-blue-100">
-                <p>• EPS Premium range showing 18.2% growth - consider expanding production capacity</p>
-                <p>• Gauteng market has 23% higher profit margins - optimize pricing strategy for other provinces</p>
-                <p>• LED Ready series has 42% growth potential - invest in marketing and distributor training</p>
-                <p>• Inventory turnover improved 15% - AI optimization saving R2.4M annually</p>
+                <p>• {((storeAnalytics as any)?.totalStores || 0).toLocaleString()} hardware stores across {(storeAnalytics as any)?.provinces || 9} provinces and international regions</p>
+                <p>• Gauteng leads with {((storeAnalytics as any)?.byProvince?.GAUTENG || 0).toLocaleString()} stores - highest monthly potential concentration</p>
+                <p>• {(storeAnalytics as any)?.territories || 0} territories mapped with {(storeAnalytics as any)?.cities || 0} cities covered</p>
+                <p>• R{(((storeAnalytics as any)?.totalMonthlyPotential || 0) / 1000000).toFixed(1)}M combined monthly potential across store network</p>
               </div>
             </div>
             <Button variant="secondary" className="bg-white/20 backdrop-blur hover:bg-white/30 text-white border-0">

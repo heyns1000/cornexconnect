@@ -80,6 +80,10 @@ export default function Dashboard() {
     queryKey: ["/api/dashboard/summary"],
   });
 
+  const { data: storeAnalytics = {} as any } = useQuery({
+    queryKey: ["/api/hardware-stores/analytics"],
+  });
+
   const { data: distributors = [] } = useQuery({
     queryKey: ["/api/distributors"],
   });
@@ -268,7 +272,7 @@ export default function Dashboard() {
                 {(summary as any)?.distributors || (distributors as any[]).length}
               </div>
               <p className="text-xs text-muted-foreground">
-                Across 9 provinces
+                Across {(storeAnalytics as any)?.provinces || 9} regions
               </p>
             </CardContent>
           </Card>
@@ -295,10 +299,10 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
-                {(summary as any)?.hardwareStores ? (summary as any).hardwareStores.toLocaleString() : '2,684'}
+                {((summary as any)?.hardwareStores || (storeAnalytics as any)?.totalStores || 0).toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
-                Nationwide coverage
+                {(storeAnalytics as any)?.provinces || 9} provinces + {((storeAnalytics as any)?.internationalRegions || []).length} international
               </p>
             </CardContent>
           </Card>
