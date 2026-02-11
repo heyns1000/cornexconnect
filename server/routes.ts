@@ -13,6 +13,7 @@ import { eq, desc } from "drizzle-orm";
 import { bulkImportSessions } from "@shared/schema";
 import fruitfulPlanetRoutes from "./src/routes/fruitfulPlanet";
 import buildmartSignalRoutes from "./src/routes/buildmartSignal";
+import cncRoutes from "./src/routes/cnc";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -31,6 +32,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Signal Uninterrupted → Database
   // ========================================
   app.use("/relay/cornexconnect", buildmartSignalRoutes);
+
+  // ========================================
+  // CNC WORKSHOP - MACH3 HOT WIRE CUTTER
+  // TAP file management + profile library
+  // Silverton, Pretoria production floor
+  // ========================================
+  app.use("/api/cnc", cncRoutes);
 
   // Simple working bulk import 
   const upload = multer({

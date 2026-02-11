@@ -33,6 +33,7 @@ import StoreMapVisualization from "@/pages/StoreMapVisualization";
 import Profile from "@/pages/Profile";
 import Achievements from "@/pages/Achievements";
 import PlanetChange from "@/pages/PlanetChange";
+import CNCDashboard from "@/pages/CNCDashboard";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import { FruitfulAssistChatbot, FruitfulAssistFloatingButton } from "@/components/FruitfulAssistChatbot";
@@ -101,6 +102,7 @@ function Router() {
         <Route path="/achievements" component={Achievements} />
         <Route path="/brands/:id" component={BrandDetail} />
         <Route path="/planet-change" component={PlanetChange} />
+        <Route path="/cnc" component={CNCDashboard} />
       </Switch>
     </PageTransition>
   );

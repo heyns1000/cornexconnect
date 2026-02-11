@@ -20,7 +20,8 @@ import {
   LogOut,
   Tag,
   Map,
-  Trophy
+  Trophy,
+  Cpu
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { name: "User Management", href: "/user-management", icon: User },
     { name: "Inventory Upload", href: "/inventory-upload", icon: Upload },
     { name: "Audit Trail", href: "/audit-trail", icon: FileText },
+    { name: "CNC Workshop", href: "/cnc", icon: Cpu },
   ];
 
   const handleLogout = async () => {
