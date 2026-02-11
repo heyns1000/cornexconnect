@@ -31,33 +31,41 @@ interface CNCProfile {
   category: string;
 }
 
-// Master profile registry — these are the REAL production profiles from the Silverton workshop
+// Master profile registry — EXACT filenames from production master library
+// Source: /Users/samantha/Desktop/Google Drive/Claude_master/G-codes/
 const MASTER_PROFILES: Omit<CNCProfile, "hasGCode">[] = [
-  // 85mm profiles
-  { id: "cove85-eps", name: "Cove85", displayName: "Cove 85mm", filename: "Cove85_EPS.tap", height: 85, material: "EPS", lengths: 168, feedRate: 600, units: 28, category: "85mm" },
-  { id: "sante85-eps", name: "Sante85", displayName: "Sante 85mm", filename: "Sante85_EPS.tap", height: 85, material: "EPS", lengths: 168, feedRate: 600, units: 28, category: "85mm" },
+  // ===== 85mm profiles =====
+  { id: "cove85-eps", name: "Cove85 EPS", displayName: "Cove 85mm EPS", filename: "Cove85 EPS.tap", height: 85, material: "EPS", lengths: 168, feedRate: 600, units: 28, category: "85mm" },
+  { id: "cove85-xps", name: "Cove85 XPS", displayName: "Cove 85mm XPS", filename: "Cove85 XPS.tap", height: 85, material: "XPS", lengths: 168, feedRate: 600, units: 28, category: "85mm" },
+  { id: "sante85-eps", name: "Sante85 EPS", displayName: "Sante 85mm EPS", filename: "Sante85EPS.tap", height: 85, material: "EPS", lengths: 168, feedRate: 600, units: 28, category: "85mm" },
+  { id: "sante85-xps", name: "Sante85 XPS", displayName: "Sante 85mm XPS", filename: "Sante85XPS.tap", height: 85, material: "XPS", lengths: 168, feedRate: 600, units: 28, category: "85mm" },
 
-  // 110mm profiles
-  { id: "biance110-xps", name: "Biance110 XPS", displayName: "Magic (Biance) 110mm XPS", filename: "Biance110_XPS.tap", height: 110, material: "XPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
-  { id: "biance110-eps", name: "Biance110 EPS", displayName: "Magic (Biance) 110mm EPS", filename: "Biance110_EPS.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
-  { id: "peroni110-xps", name: "Peroni 110 XPS", displayName: "Peroni 110mm XPS", filename: "Peroni_110_XPS.tap", height: 110, material: "XPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
-  { id: "gloria110-eps", name: "Gloria110 EPS", displayName: "Gloria 110mm EPS", filename: "Gloria110_EPS.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
-  { id: "alina110-eps", name: "Alina110 EPS", displayName: "Alina 110mm EPS", filename: "Alina110_EPS.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
-  { id: "colonial110-eps", name: "Colonial 110 EPS", displayName: "Colonial 110mm EPS", filename: "Colonial_110_EPS.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
-  { id: "g1home110x", name: "G1Homepack110X", displayName: "G1 Homepack 110mm XPS", filename: "G1Homepack110X.tap", height: 110, material: "XPS", lengths: null, feedRate: 600, units: 28, category: "110mm" },
-  { id: "g1home110e", name: "G1Homepack110E", displayName: "G1 Homepack 110mm EPS", filename: "G1Homepack110E.tap", height: 110, material: "EPS", lengths: null, feedRate: 600, units: 28, category: "110mm" },
-  { id: "tamara110-eps", name: "Tamara110 EPS", displayName: "Tamara 110mm EPS", filename: "Tamara110_EPS.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
+  // ===== 110mm profiles =====
+  { id: "alina110-eps", name: "Alina110 EPS", displayName: "Alina 110mm EPS", filename: "Alina110 EPS.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
+  { id: "alina110-xps", name: "Alina110 XPS", displayName: "Alina 110mm XPS", filename: "Alina110 XPS.tap", height: 110, material: "XPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
+  { id: "alina-eps", name: "Alina EPS", displayName: "Alina EPS (Themba)", filename: "Alina EPS.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
+  { id: "biance110-eps", name: "Biance110 EPS", displayName: "Magic (Biance) 110mm EPS", filename: "Biance110 EPS.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
+  { id: "biance110-xps", name: "Biance110 XPS", displayName: "Magic (Biance) 110mm XPS", filename: "Biance110 XPS.tap", height: 110, material: "XPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
+  { id: "biance-eps", name: "Biance EPS", displayName: "Magic (Biance) EPS (Themba)", filename: "Biance EPS.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
+  { id: "colonial110-eps", name: "Colonial 110 EPS", displayName: "Colonial 110mm EPS", filename: "Colonial 110 EPS.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
+  { id: "colonial110-xps", name: "Colonial 110 XPS", displayName: "Colonial 110mm XPS", filename: "Colonial 110 XPS.tap", height: 110, material: "XPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
+  { id: "gloria110-eps", name: "Gloria110 EPS", displayName: "Gloria 110mm EPS", filename: "Gloria110 EPS.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
+  { id: "gloria110-xps", name: "Gloria110 XPS", displayName: "Gloria 110mm XPS", filename: "Gloria110 XPS.tap", height: 110, material: "XPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
+  { id: "peroni110-xps", name: "Peroni 110 XPS", displayName: "Peroni 110mm XPS", filename: "Peroni 110 XPS .tap", height: 110, material: "XPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
+  { id: "peroni110-eps", name: "Peroni 110", displayName: "Peroni 110mm EPS", filename: "Peroni 110.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
+  { id: "g1home110-epsthin", name: "G1Homepack110 EPS Thin", displayName: "G1 Homepack 110mm EPS Thin", filename: "G1Homepack110EPSThin.tap", height: 110, material: "EPS Thin", lengths: null, feedRate: 600, units: 28, category: "110mm" },
+  { id: "g1home110-xpsthin", name: "G1Homepack110 XPS Thin", displayName: "G1 Homepack 110mm XPS Thin", filename: "G1Homepack110XPSThin.tap", height: 110, material: "XPS", lengths: null, feedRate: 600, units: 28, category: "110mm" },
+  { id: "tamara110-eps", name: "Tamara110 EPS", displayName: "Tamara 110mm EPS", filename: "Tamara110 EPS.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
   { id: "nt108-eps", name: "NT108 EPS", displayName: "NT108 Wavy 110mm EPS", filename: "NT108_EPS.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
 
-  // 140mm profiles
-  { id: "tamara140-eps", name: "Tamara140 EPS", displayName: "Tamara 140mm EPS", filename: "Tamara140_EPS.tap", height: 140, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "140mm" },
-  { id: "p40-140-eps", name: "P40 140 EPS", displayName: "P40 (Eve) 140mm EPS", filename: "P40_140_EPS.tap", height: 140, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "140mm" },
-  { id: "troy140-eps", name: "Troy140 EPS", displayName: "Troy 140mm EPS", filename: "Troy140_EPS.tap", height: 140, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "140mm" },
+  // ===== 140mm profiles =====
+  { id: "tamara140-epsthin", name: "Tamara140 EPS Thin", displayName: "Tamara 140mm EPS Thin (New)", filename: "Tamara140 EPSThinnew.tap", height: 140, material: "EPS Thin", lengths: 112, feedRate: 600, units: 28, category: "140mm" },
+  { id: "p40-140-eps", name: "P40 140 EPS", displayName: "P40 (Eve) 140mm EPS", filename: "P40140EPS.tap", height: 140, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "140mm" },
+  { id: "troy140-eps", name: "Troy140 EPS", displayName: "Troy 140mm EPS", filename: "Troy140 EPS.tap", height: 140, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "140mm" },
 
-  // 170mm+ profiles
-  { id: "lisa170-epsthin", name: "Lisa170 EPSThin", displayName: "Lisa 170mm EPS Thin", filename: "Lisa170_EPSThin.tap", height: 170, material: "EPS Thin", lengths: 84, feedRate: 600, units: 28, category: "170mm+" },
-  { id: "gloria185-epsthin", name: "Gloria185 EPSThin", displayName: "Gloria 185mm EPS Thin", filename: "Gloria185_EPSThin.tap", height: 185, material: "EPS Thin", lengths: 84, feedRate: 600, units: 28, category: "170mm+" },
-  { id: "bianca-eps", name: "Bianca EPS", displayName: "Bianca Standard EPS", filename: "Bianca_EPS.tap", height: 110, material: "EPS", lengths: 112, feedRate: 600, units: 28, category: "110mm" },
+  // ===== 170mm+ profiles =====
+  { id: "lisa170-epsthin", name: "Lisa170 EPSThin", displayName: "Lisa 170mm EPS Thin", filename: "Lisa170 EPSThin.tap", height: 170, material: "EPS Thin", lengths: 84, feedRate: 600, units: 28, category: "170mm+" },
+  { id: "gloria185-epsthin", name: "Gloria185 EPSThin", displayName: "Gloria 185mm EPS Thin", filename: "Gloria185 EPSThin.tap", height: 185, material: "EPS Thin", lengths: 84, feedRate: 600, units: 28, category: "170mm+" },
 ];
 
 type JobStatus = "idle" | "ready" | "running" | "complete";
