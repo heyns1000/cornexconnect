@@ -32,7 +32,7 @@ import ProductLabels from "@/pages/ProductLabels";
 import StoreMapVisualization from "@/pages/StoreMapVisualization";
 import Profile from "@/pages/Profile";
 import Achievements from "@/pages/Achievements";
-import PlanetChange from "@/pages/PlanetChange";
+import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import { FruitfulAssistChatbot, FruitfulAssistFloatingButton } from "@/components/FruitfulAssistChatbot";
@@ -46,8 +46,8 @@ import { useState } from "react";
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
   
-  // Demo mode for Homemart Africa - bypass authentication
-  const isDemoMode = window.location.hostname.includes('replit.dev') || true;
+  // Auth is handled by useAuth hook (tries real auth, falls back to demo)
+  const isDemoMode = !isAuthenticated && !isLoading;
 
   // Show loading while checking authentication (only briefly)
   if (isLoading && !isDemoMode) {
@@ -100,7 +100,7 @@ function Router() {
         <Route path="/profile" component={Profile} />
         <Route path="/achievements" component={Achievements} />
         <Route path="/brands/:id" component={BrandDetail} />
-        <Route path="/planet-change" component={PlanetChange} />
+        <Route component={NotFound} />
       </Switch>
     </PageTransition>
   );

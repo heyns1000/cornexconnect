@@ -31,7 +31,7 @@ export function GoogleMap({
 
   useEffect(() => {
     const loader = new Loader({
-      apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBkNaAGLEVq0YLQMi-PYEMabFeREadYe1Q',
+      apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_API_KEY || '',
       version: 'weekly',
       libraries: ['places', 'geometry', 'directions']
     });

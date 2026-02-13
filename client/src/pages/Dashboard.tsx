@@ -254,7 +254,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-emerald-600">
-                {(summary as any)?.revenue ? formatCurrency((summary as any).revenue) : 'R57.8M'}
+                {(summary as any)?.revenue ? formatCurrency((summary as any).revenue) : formatCurrency(0)}
               </div>
               <p className="text-xs text-muted-foreground">
                 +12.5% from last month

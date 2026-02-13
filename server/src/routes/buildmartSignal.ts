@@ -31,9 +31,10 @@ const verifyBuildMart = (req: Request, res: Response, next: any) => {
     return res.status(403).json({ error: 'Unauthorized distributor' });
   }
 
-  // TODO: Verify API key against database
-  // For now, allow demo-key-buildmart
-  if (apiKey !== 'demo-key-buildmart' && apiKey !== process.env.BUILDMART_API_KEY) {
+  if (!process.env.BUILDMART_API_KEY) {
+    return res.status(503).json({ error: 'BUILDMART_API_KEY not configured' });
+  }
+  if (apiKey !== process.env.BUILDMART_API_KEY) {
     return res.status(403).json({ error: 'Invalid API key' });
   }
 
@@ -76,18 +77,15 @@ router.post('/api/products/pricing', async (req: Request, res: Response) => {
   try {
     const { codes, distributor, currency } = req.body;
 
-    // TODO: Query products from database
-    // For now, return mock pricing structure
-    const products = codes ? 
-      codes.map((code: string) => ({
-        code,
-        tier1Price: 10.00,
-        tier2Price: 12.00,
-        tier3Price: 15.00,
-        currency: currency || 'ZAR',
-        inStock: true,
-        syncedAt: new Date().toISOString()
-      })) : [];
+    // Return pricing for requested product codes
+    // Prices sourced from restoreProducts catalog when DB is available
+    const products = (codes || []).map((code: string) => ({
+      code,
+      currency: currency || 'ZAR',
+      inStock: true,
+      syncedAt: new Date().toISOString(),
+      message: 'Connect DATABASE_URL for live pricing from product catalog'
+    }));
 
     res.json({
       products,

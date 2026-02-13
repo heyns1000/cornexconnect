@@ -12,6 +12,8 @@ export default function StoreMapVisualization() {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProvince, setSelectedProvince] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
 
   const { data: stores = [], isLoading: storesLoading } = useQuery({
     queryKey: ["/api/hardware-stores"],
@@ -46,7 +48,7 @@ export default function StoreMapVisualization() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Select value={selectedProvince} onValueChange={setSelectedProvince}>
+          <Select value={selectedProvince} onValueChange={(v) => { setSelectedProvince(v); setPage(1); }}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="All Provinces" />
             </SelectTrigger>
@@ -125,7 +127,7 @@ export default function StoreMapVisualization() {
               <Input
                 placeholder="Search stores or locations..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
                 className="pl-10"
               />
             </div>
@@ -140,7 +142,7 @@ export default function StoreMapVisualization() {
                 return (
                   <button
                     key={province}
-                    onClick={() => setSelectedProvince(province === selectedProvince ? "all" : province)}
+                    onClick={() => { setSelectedProvince(province === selectedProvince ? "all" : province); setPage(1); }}
                     className={`p-3 rounded-lg border text-left transition-all hover:scale-105 ${
                       selectedProvince === province
                         ? 'border-emerald-500 bg-emerald-500/20 ring-2 ring-emerald-500/30'
@@ -198,7 +200,7 @@ export default function StoreMapVisualization() {
             <div className="text-center py-8">Loading stores...</div>
           ) : (
             <div className="space-y-2">
-              {filteredStores.slice(0, 20).map((store: any, index: number) => (
+              {filteredStores.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((store: any, index: number) => (
                 <div key={store.id || index} className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className={`w-2 h-2 rounded-full ${
@@ -221,10 +223,16 @@ export default function StoreMapVisualization() {
                   </div>
                 </div>
               ))}
-              {filteredStores.length > 20 && (
-                <p className="text-center text-sm text-muted-foreground py-2">
-                  Showing 20 of {filteredStores.length.toLocaleString()} stores. Use search to narrow results.
-                </p>
+              {filteredStores.length > PAGE_SIZE && (
+                <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                  <p className="text-sm text-muted-foreground">
+                    Page {page} of {Math.ceil(filteredStores.length / PAGE_SIZE)} ({filteredStores.length.toLocaleString()} stores)
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
+                    <Button variant="outline" size="sm" disabled={page >= Math.ceil(filteredStores.length / PAGE_SIZE)} onClick={() => setPage(p => p + 1)}>Next</Button>
+                  </div>
+                </div>
               )}
             </div>
           )}

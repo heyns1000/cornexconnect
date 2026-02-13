@@ -240,12 +240,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 {!collapsed && <span>Company Management</span>}
               </div>
             </Link>
-            <Link href="/licensing">
-              <div className="flex items-center px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                <FileText className="w-4 h-4 mr-3 flex-shrink-0" />
-                {!collapsed && <span>Licensing</span>}
-              </div>
-            </Link>
           </div>
         </div>
       </nav>

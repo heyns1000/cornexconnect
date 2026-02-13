@@ -13,24 +13,32 @@ import { eq, desc } from "drizzle-orm";
 import { bulkImportSessions } from "@shared/schema";
 import fruitfulPlanetRoutes from "./src/routes/fruitfulPlanet";
 import buildmartSignalRoutes from "./src/routes/buildmartSignal";
+import ordersRoutes from "./src/routes/orders";
+import customersRoutes from "./src/routes/customers";
+import forecastsRoutes from "./src/routes/forecasts";
+import logisticsRoutes from "./src/routes/logistics";
+import skusRoutes from "./src/routes/skus";
+import currenciesRoutes from "./src/routes/currencies";
+import importRoutes from "./src/routes/import";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // ========================================
-  // FRUITFUL PLANET CHANGE - QUEENS NEST
-  // 93 GitHub Repositories Integration
-  // Rhino Strikes + Ant Lattice Execution
-  // ========================================
-  app.use("/api/fruitful-planet", fruitfulPlanetRoutes);
+  // Ecosystem status & health
+  app.use("/api/ecosystem", fruitfulPlanetRoutes);
 
-  // ========================================
-  // BUILDMART AFRICA - SIGNAL RELAY
-  // Buyer App Signal Sync (No IP Exposure)
-  // Signal Uninterrupted → Database
-  // ========================================
+  // BuildMart Africa distributor relay
   app.use("/relay/cornexconnect", buildmartSignalRoutes);
+
+  // Core business API routes
+  app.use("/api/orders", ordersRoutes);
+  app.use("/api/customers", customersRoutes);
+  app.use("/api/forecasts", forecastsRoutes);
+  app.use("/api/logistics", logisticsRoutes);
+  app.use("/api/skus", skusRoutes);
+  app.use("/api/currencies", currenciesRoutes);
+  app.use("/api/import", importRoutes);
 
   // Simple working bulk import 
   const upload = multer({
@@ -203,7 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hardwareStores: stores.length || extracted?.metadata.totalStores || 0,
         products: products.length,
         distributors: distributors.length,
-        revenue: 57800000, // R57.8M
+        revenue: extracted ? extracted.stores.reduce((sum: number, s: any) => sum + (s.monthlyPotential || 0), 0) * 12 : 0,
         provinces: extracted ? Object.keys(extracted.metadata.byProvince).length : 9,
         territories: extracted?.metadata.territories || 0,
         cities: extracted?.metadata.cities || 0,
