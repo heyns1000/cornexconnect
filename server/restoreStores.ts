@@ -52,6 +52,35 @@ function loadExtractedStores(): ExtractedData | null {
   return null;
 }
 
+// Load normalized client data from all spreadsheets
+function loadNormalizedClients(): any[] {
+  try {
+    const jsonPath = path.join(process.cwd(), "server", "normalized-clients.json");
+    if (fs.existsSync(jsonPath)) {
+      const raw = fs.readFileSync(jsonPath, "utf-8");
+      const data = JSON.parse(raw);
+      return data.records || [];
+    }
+  } catch (e) {
+    console.error("Failed to load normalized-clients.json:", e);
+  }
+  return [];
+}
+
+// Export normalized client data for analytics
+export function getNormalizedClientData() {
+  try {
+    const jsonPath = path.join(process.cwd(), "server", "normalized-clients.json");
+    if (fs.existsSync(jsonPath)) {
+      const raw = fs.readFileSync(jsonPath, "utf-8");
+      return JSON.parse(raw);
+    }
+  } catch (e) {
+    console.error("Failed to load normalized-clients.json:", e);
+  }
+  return null;
+}
+
 export async function restoreHardwareStores() {
   try {
     console.log("Restoring hardware store database from real client data...");

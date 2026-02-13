@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { achievementService } from "./achievementService";
 import { restoreProducts } from "./restoreProducts";
-import { restoreHardwareStores, getExtractedStoreData } from "./restoreStores";
+import { restoreHardwareStores, getExtractedStoreData, getNormalizedClientData } from "./restoreStores";
 import multer from "multer";
 import * as XLSX from 'xlsx';
 import { nanoid } from 'nanoid';
@@ -299,6 +299,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error in stores restoration:", error);
       res.status(500).json({ success: false, error: "Stores restoration failed" });
+    }
+  });
+
+  // Normalized client data from all spreadsheets
+  app.get("/api/clients/normalized", async (req, res) => {
+    try {
+      const data = getNormalizedClientData();
+      if (data) {
+        res.json(data);
+      } else {
+        res.status(404).json({ error: "No normalized client data found. Run normalize-all-spreadsheets.cjs first." });
+      }
+    } catch (error) {
+      console.error("Error fetching normalized clients:", error);
+      res.status(500).json({ error: "Failed to fetch normalized client data" });
+    }
+  });
+
+  // CSV download of normalized client data
+  app.get("/api/clients/normalized/csv", async (req, res) => {
+    try {
+      const csvPath = require('path').join(process.cwd(), 'server', 'normalized-clients.csv');
+      const fs = require('fs');
+      if (fs.existsSync(csvPath)) {
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=cornexconnect-clients.csv');
+        fs.createReadStream(csvPath).pipe(res);
+      } else {
+        res.status(404).json({ error: "CSV file not generated yet. Run normalize-all-spreadsheets.cjs first." });
+      }
+    } catch (error) {
+      console.error("Error downloading CSV:", error);
+      res.status(500).json({ error: "Failed to download CSV" });
     }
   });
 
