@@ -12,17 +12,26 @@ export interface AuthUser {
   role: string;
   authProvider: string;
   emailVerified: boolean;
+  lastLoginAt: string | null;
+  phone: string | null;
+  department: string | null;
   createdAt: string;
 }
 
 export function useAuth() {
-  const { data: user, isLoading, error } = useQuery<AuthUser>({
+  const { data: user, isLoading } = useQuery<AuthUser | null>({
     queryKey: ["/api/auth/user"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/user", { credentials: "include" });
+      if (res.status === 401) return null;
+      if (!res.ok) return null;
+      return await res.json();
+    },
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
 
-  const isAuthenticated = !!user && !error;
+  const isAuthenticated = !!user;
 
   return {
     user: user || null,
@@ -38,7 +47,6 @@ export function usePageAudit(pageName: string) {
 
   useEffect(() => {
     if (user) {
-      // Fire and forget - log page visit
       apiRequest("/api/auth/audit", "POST", {
         action: "page_visit",
         details: `Visited: ${pageName}`,

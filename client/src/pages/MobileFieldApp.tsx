@@ -91,10 +91,7 @@ export default function MobileFieldApp() {
   // Offline sync queue
   const syncMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("/api/store-visits/sync", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("/api/store-visits/sync", "POST", data);
     },
     onSuccess: () => {
       setSyncQueue([]);
@@ -111,10 +108,7 @@ export default function MobileFieldApp() {
         setSyncQueue(prev => [...prev, visitData]);
         return visitData;
       }
-      return await apiRequest("/api/store-visits", {
-        method: "POST",
-        body: JSON.stringify(visitData),
-      });
+      return await apiRequest("/api/store-visits", "POST", visitData);
     },
     onSuccess: () => {
       toast({ title: "Visit recorded successfully" });

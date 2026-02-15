@@ -302,6 +302,9 @@ export async function setupAuth(app: Express) {
         role: user.role,
         authProvider: user.authProvider,
         emailVerified: user.emailVerified,
+        phone: user.phone,
+        department: user.department,
+        lastLoginAt: user.lastLoginAt,
         createdAt: user.createdAt,
       });
     } else {

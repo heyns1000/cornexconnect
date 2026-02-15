@@ -32,7 +32,7 @@ export default function ProductionPlanning() {
 
   const createScheduleMutation = useMutation({
     mutationFn: async (scheduleData: any) => {
-      return await apiRequest("POST", "/api/production-schedule", scheduleData);
+      return await apiRequest("/api/production-schedule", "POST", scheduleData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/production-schedule"] });
@@ -52,7 +52,7 @@ export default function ProductionPlanning() {
 
   const updateScheduleMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      return await apiRequest("PUT", `/api/production-schedule/${id}`, data);
+      return await apiRequest(`/api/production-schedule/${id}`, "PUT", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/production-schedule"] });

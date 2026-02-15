@@ -39,7 +39,7 @@ export default function GlobalDistributors() {
 
   const createDistributorMutation = useMutation({
     mutationFn: async (distributorData: any) => {
-      return await apiRequest("POST", "/api/distributors", distributorData);
+      return await apiRequest("/api/distributors", "POST", distributorData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/distributors"] });

@@ -2155,7 +2155,9 @@ class MemoryStorage implements IStorage {
       );
     }
     
-    return await query.orderBy(desc(userAuditTrail.timestamp)).limit(1000);
+    const limit = filters?.limit || 100;
+    const offset = filters?.offset || 0;
+    return await query.orderBy(desc(userAuditTrail.timestamp)).limit(limit).offset(offset);
   }
 
   async createAuditLog(log: InsertUserAuditTrail): Promise<UserAuditTrail> {

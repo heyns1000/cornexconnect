@@ -63,10 +63,7 @@ export default function ExtendedAutomation() {
   // Mutations
   const toggleRuleMutation = useMutation({
     mutationFn: async (data: { id: string; isActive: boolean }) => {
-      return apiRequest(`/api/automation-rules/${data.id}`, {
-        method: 'PATCH',
-        body: { isActive: data.isActive }
-      });
+      return apiRequest(`/api/automation-rules/${data.id}`, "PATCH", { isActive: data.isActive });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/automation-rules'] });
@@ -76,9 +73,7 @@ export default function ExtendedAutomation() {
 
   const executeRuleMutation = useMutation({
     mutationFn: async (ruleId: string) => {
-      return apiRequest(`/api/automation-rules/${ruleId}/execute`, {
-        method: 'POST'
-      });
+      return apiRequest(`/api/automation-rules/${ruleId}/execute`, "POST");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/automation-events'] });

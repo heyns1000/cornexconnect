@@ -93,7 +93,7 @@ export default function Header() {
                     ? `${user.firstName} ${user.lastName}` 
                     : user?.email || "User"}
                 </p>
-                <p className="text-xs text-gray-500">Team Member</p>
+                <p className="text-xs text-gray-500 capitalize">{user?.role || "User"}</p>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

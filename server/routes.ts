@@ -338,6 +338,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============================================
+  // USER MANAGEMENT CRUD API
+  // ============================================
+
+  // Get all users
+  app.get("/api/users", async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      // Never expose password hashes
+      const safeUsers = allUsers.map(({ passwordHash, ...u }: any) => u);
+      res.json(safeUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Create a new user (admin only)
+  app.post("/api/users", async (req, res) => {
+    try {
+      const newUser = await storage.createUser(req.body);
+      const { passwordHash, ...safeUser } = newUser as any;
+      res.json(safeUser);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+
+  // Update a user
+  app.patch("/api/users/:id", async (req, res) => {
+    try {
+      const updated = await storage.updateUser(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      const { passwordHash, ...safeUser } = updated as any;
+      res.json(safeUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  // Delete a user (soft delete)
+  app.delete("/api/users/:id", async (req, res) => {
+    try {
+      const result = await storage.deleteUser(req.params.id);
+      res.json({ success: result });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
+  // ============================================
+  // COMPANY SETTINGS API
+  // ============================================
+
+  // Get company settings
+  app.get("/api/company-settings", async (req, res) => {
+    try {
+      const settings = await storage.getCompanySettings();
+      res.json(settings || {});
+    } catch (error) {
+      console.error("Error fetching company settings:", error);
+      res.status(500).json({ error: "Failed to fetch company settings" });
+    }
+  });
+
+  // Update company settings
+  app.put("/api/company-settings", async (req, res) => {
+    try {
+      const settings = await storage.updateCompanySettings(req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating company settings:", error);
+      res.status(500).json({ error: "Failed to update company settings" });
+    }
+  });
+
+  // ============================================
+  // AUDIT LOG API (alternative endpoint)
+  // ============================================
+
+  // Get audit logs (alternative to /api/auth/audit)
+  app.get("/api/audit-logs", async (req, res) => {
+    try {
+      const logs = await storage.getAuditLogs({
+        limit: parseInt(req.query.limit as string) || 100,
+        offset: parseInt(req.query.offset as string) || 0,
+        userId: req.query.userId as string,
+        action: req.query.action as string,
+      });
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+      res.status(500).json({ error: "Failed to fetch audit logs" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

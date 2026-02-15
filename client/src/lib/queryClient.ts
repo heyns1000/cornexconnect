@@ -2,14 +2,23 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    const text = await res.text();
+    // Try to extract JSON message for cleaner error messages
+    try {
+      const json = JSON.parse(text);
+      throw new Error(json.message || json.error || text || res.statusText);
+    } catch (parseErr) {
+      if (parseErr instanceof Error && !text.startsWith('{')) {
+        throw new Error(text || res.statusText);
+      }
+      throw parseErr;
+    }
   }
 }
 
 export async function apiRequest(
-  method: string,
   url: string,
+  method: string = "GET",
   data?: unknown | undefined,
 ): Promise<Response> {
   const res = await fetch(url, {

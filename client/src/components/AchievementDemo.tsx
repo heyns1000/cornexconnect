@@ -18,14 +18,11 @@ export function AchievementDemo() {
 
   const recordImportMutation = useMutation({
     mutationFn: async (performance: any) => {
-      return await apiRequest("/api/achievements/record-import", {
-        method: "POST",
-        body: JSON.stringify({
-          userId: user?.id || "demo-user",
-          sessionId: `demo-${Date.now()}`,
-          fileName: "demo-import.xlsx",
-          performance
-        })
+      return await apiRequest("/api/achievements/record-import", "POST", {
+        userId: user?.id || "demo-user",
+        sessionId: `demo-${Date.now()}`,
+        fileName: "demo-import.xlsx",
+        performance
       });
     },
     onSuccess: () => {

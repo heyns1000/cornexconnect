@@ -99,9 +99,7 @@ export default function RouteOptimization() {
   // Mutations
   const optimizeRouteMutation = useMutation({
     mutationFn: async (routeId: string) => {
-      return await apiRequest(`/api/route-plans/${routeId}/optimize`, {
-        method: "POST",
-      });
+      return await apiRequest(`/api/route-plans/${routeId}/optimize`, "POST");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/route-plans"] });
@@ -111,10 +109,7 @@ export default function RouteOptimization() {
 
   const updateRouteStatusMutation = useMutation({
     mutationFn: async (data: { routeId: string; status: string }) => {
-      return await apiRequest(`/api/route-plans/${data.routeId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: data.status }),
-      });
+      return await apiRequest(`/api/route-plans/${data.routeId}`, "PATCH", { status: data.status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/route-plans"] });
