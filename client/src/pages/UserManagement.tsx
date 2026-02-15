@@ -15,15 +15,17 @@ import { Users, UserPlus, Edit, Trash2, Shield, Mail, Phone } from "lucide-react
 
 interface User {
   id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  role: 'admin' | 'manager' | 'staff' | 'viewer';
-  department: string;
-  status: 'active' | 'inactive';
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  phone?: string | null;
+  role: string;
+  department?: string | null;
+  isActive?: boolean;
+  authProvider?: string;
+  emailVerified?: boolean;
+  lastLoginAt?: string | null;
   createdAt: string;
-  lastLogin?: string;
 }
 
 export default function UserManagement() {
@@ -45,6 +47,13 @@ export default function UserManagement() {
         description: "New user has been created successfully.",
       });
     },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create user.",
+        variant: "destructive",
+      });
+    },
   });
 
   const updateUserMutation = useMutation({
@@ -58,6 +67,13 @@ export default function UserManagement() {
         description: "User information has been updated successfully.",
       });
     },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update user.",
+        variant: "destructive",
+      });
+    },
   });
 
   const deleteUserMutation = useMutation({
@@ -65,8 +81,15 @@ export default function UserManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
-        title: "User Deleted",
-        description: "User has been removed from the system.",
+        title: "User Deactivated",
+        description: "User has been deactivated from the system.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to deactivate user.",
+        variant: "destructive",
       });
     },
   });
@@ -77,9 +100,9 @@ export default function UserManagement() {
       lastName: formData.get("lastName") as string,
       email: formData.get("email") as string,
       phone: formData.get("phone") as string,
-      role: formData.get("role") as User["role"],
+      role: formData.get("role") as string,
       department: formData.get("department") as string,
-      status: "active" as const,
+      isActive: true,
     };
     createUserMutation.mutate(userData);
   };
@@ -92,11 +115,23 @@ export default function UserManagement() {
       lastName: formData.get("lastName") as string,
       email: formData.get("email") as string,
       phone: formData.get("phone") as string,
-      role: formData.get("role") as User["role"],
+      role: formData.get("role") as string,
       department: formData.get("department") as string,
-      status: formData.get("status") as User["status"],
+      isActive: formData.get("status") === "active",
     };
     updateUserMutation.mutate(userData);
+  };
+
+  const getInitials = (user: User) => {
+    const first = (user.firstName || user.email || "U")[0] || "U";
+    const last = (user.lastName || "")[0] || "";
+    return `${first}${last}`.toUpperCase();
+  };
+
+  const getDisplayName = (user: User) => {
+    if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
+    if (user.firstName) return user.firstName;
+    return user.email || "Unknown User";
   };
 
   const getRoleColor = (role: string) => {
@@ -217,18 +252,20 @@ export default function UserManagement() {
                       <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
                           <span className="text-emerald-800 font-semibold">
-                            {user.firstName[0]}{user.lastName[0]}
+                            {getInitials(user)}
                           </span>
                         </div>
                         <div>
                           <h3 className="font-semibold text-gray-900">
-                            {user.firstName} {user.lastName}
+                            {getDisplayName(user)}
                           </h3>
                           <div className="flex items-center space-x-4 text-sm text-gray-600">
-                            <span className="flex items-center">
-                              <Mail className="h-3 w-3 mr-1" />
-                              {user.email}
-                            </span>
+                            {user.email && (
+                              <span className="flex items-center">
+                                <Mail className="h-3 w-3 mr-1" />
+                                {user.email}
+                              </span>
+                            )}
                             {user.phone && (
                               <span className="flex items-center">
                                 <Phone className="h-3 w-3 mr-1" />
@@ -237,16 +274,20 @@ export default function UserManagement() {
                             )}
                           </div>
                           <div className="flex items-center space-x-2 mt-1">
-                            <Badge className={getRoleColor(user.role)}>
+                            <Badge className={getRoleColor(user.role || "viewer")}>
                               <Shield className="h-3 w-3 mr-1" />
-                              {user.role.toUpperCase()}
+                              {(user.role || "viewer").toUpperCase()}
                             </Badge>
-                            <Badge variant="outline">
-                              {user.department}
-                            </Badge>
-                            <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
-                              {user.status}
-                            </Badge>
+                            {user.department && (
+                              <Badge variant="outline" className="capitalize">
+                                {user.department}
+                              </Badge>
+                            )}
+                            {user.authProvider && user.authProvider !== "local" && (
+                              <Badge variant="outline" className="text-xs capitalize">
+                                via {user.authProvider}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -261,7 +302,11 @@ export default function UserManagement() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => deleteUserMutation.mutate(user.id)}
+                          onClick={() => {
+                            if (confirm("Are you sure you want to deactivate this user?")) {
+                              deleteUserMutation.mutate(user.id);
+                            }
+                          }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -295,46 +340,46 @@ export default function UserManagement() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="editFirstName">First Name</Label>
-                    <Input 
-                      id="editFirstName" 
-                      name="firstName" 
-                      defaultValue={editingUser.firstName} 
-                      required 
+                    <Input
+                      id="editFirstName"
+                      name="firstName"
+                      defaultValue={editingUser.firstName || ""}
+                      required
                     />
                   </div>
                   <div>
                     <Label htmlFor="editLastName">Last Name</Label>
-                    <Input 
-                      id="editLastName" 
-                      name="lastName" 
-                      defaultValue={editingUser.lastName} 
-                      required 
+                    <Input
+                      id="editLastName"
+                      name="lastName"
+                      defaultValue={editingUser.lastName || ""}
+                      required
                     />
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="editEmail">Email</Label>
-                  <Input 
-                    id="editEmail" 
-                    name="email" 
-                    type="email" 
-                    defaultValue={editingUser.email} 
-                    required 
+                  <Input
+                    id="editEmail"
+                    name="email"
+                    type="email"
+                    defaultValue={editingUser.email || ""}
+                    required
                   />
                 </div>
                 <div>
                   <Label htmlFor="editPhone">Phone</Label>
-                  <Input 
-                    id="editPhone" 
-                    name="phone" 
-                    type="tel" 
-                    defaultValue={editingUser.phone || ''} 
+                  <Input
+                    id="editPhone"
+                    name="phone"
+                    type="tel"
+                    defaultValue={editingUser.phone || ''}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="editRole">Role</Label>
-                    <Select name="role" defaultValue={editingUser.role}>
+                    <Select name="role" defaultValue={editingUser.role || "viewer"}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -348,9 +393,9 @@ export default function UserManagement() {
                   </div>
                   <div>
                     <Label htmlFor="editDepartment">Department</Label>
-                    <Select name="department" defaultValue={editingUser.department}>
+                    <Select name="department" defaultValue={editingUser.department || ""}>
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Select department" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="administration">Administration</SelectItem>
@@ -365,7 +410,7 @@ export default function UserManagement() {
                 </div>
                 <div>
                   <Label htmlFor="editStatus">Status</Label>
-                  <Select name="status" defaultValue={editingUser.status}>
+                  <Select name="status" defaultValue={editingUser.isActive !== false ? "active" : "inactive"}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
