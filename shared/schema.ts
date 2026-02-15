@@ -15,19 +15,24 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// Updated users table for Replit Auth
+// Users table with OAuth + email/password support
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
+  passwordHash: varchar("password_hash"),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  authProvider: varchar("auth_provider").default("local"), // local, google, microsoft, github, facebook
+  authProviderId: varchar("auth_provider_id"), // external provider user ID
   role: text("role").notNull().default("viewer"), // admin, manager, staff, viewer
   department: text("department"),
   phone: text("phone"),
   region: text("region"),
   currency: text("currency").default("ZAR"),
   isActive: boolean("is_active").default(true),
+  emailVerified: boolean("email_verified").default(false),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

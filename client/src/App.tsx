@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -37,42 +37,11 @@ import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import { FruitfulAssistChatbot, FruitfulAssistFloatingButton } from "@/components/FruitfulAssistChatbot";
 import { LoadingTransition } from "@/components/PageTransition";
-import { AnimatedCard, FadeIn } from "@/components/AnimatedComponents";
 import { MoodFloatingButton } from "@/components/MoodFloatingButton";
 import { MoodProvider } from "@/hooks/useMoodContext";
-// Translation system is now self-contained in useTranslation hook
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-  
-  // Auth is handled by useAuth hook (tries real auth, falls back to demo)
-  const isDemoMode = !isAuthenticated && !isLoading;
-
-  // Show loading while checking authentication (only briefly)
-  if (isLoading && !isDemoMode) {
-    return (
-      <LoadingTransition isLoading={true}>
-        <div />
-      </LoadingTransition>
-    );
-  }
-
-  // Show public pages for unauthenticated users (only if not demo mode)
-  if (!isAuthenticated && !isDemoMode) {
-    return (
-      <PageTransition>
-        <Switch>
-          <Route path="/" component={Landing} />
-          <Route path="/login" component={Login} />
-          <Route path="/register" component={Register} />
-          <Route component={Landing} />
-        </Switch>
-      </PageTransition>
-    );
-  }
-
-  // Show authenticated app routes only (layout handled by AuthenticatedApp)
+function AuthenticatedRoutes() {
   return (
     <PageTransition>
       <Switch>
@@ -106,6 +75,19 @@ function Router() {
   );
 }
 
+function PublicRoutes() {
+  return (
+    <PageTransition>
+      <Switch>
+        <Route path="/" component={Landing} />
+        <Route path="/login" component={Login} />
+        <Route path="/register" component={Register} />
+        <Route component={Landing} />
+      </Switch>
+    </PageTransition>
+  );
+}
+
 function AuthenticatedApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [chatbotOpen, setChatbotOpen] = useState(false);
@@ -116,21 +98,21 @@ function AuthenticatedApp() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto">
-          <Router />
+          <AuthenticatedRoutes />
         </main>
       </div>
-      
+
       {/* AI-Powered Mood Selector */}
       <MoodFloatingButton />
 
       {/* Fruitful Assist Chatbot */}
-      <FruitfulAssistFloatingButton 
-        onClick={() => setChatbotOpen(true)} 
-        isOpen={chatbotOpen} 
+      <FruitfulAssistFloatingButton
+        onClick={() => setChatbotOpen(true)}
+        isOpen={chatbotOpen}
       />
-      <FruitfulAssistChatbot 
-        isOpen={chatbotOpen} 
-        onToggle={() => setChatbotOpen(!chatbotOpen)} 
+      <FruitfulAssistChatbot
+        isOpen={chatbotOpen}
+        onToggle={() => setChatbotOpen(!chatbotOpen)}
       />
     </div>
   );
@@ -138,17 +120,27 @@ function AuthenticatedApp() {
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [location] = useLocation();
 
+  // Show loading spinner while checking auth
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+          <p className="text-sm text-gray-500">Loading CornexConnect...</p>
+        </div>
       </div>
     );
   }
 
-  // Always use AuthenticatedApp in demo mode (bypasses authentication)
-  return <AuthenticatedApp />;
+  // If authenticated, show the full app
+  if (isAuthenticated) {
+    return <AuthenticatedApp />;
+  }
+
+  // Not authenticated - show public pages (landing, login, register)
+  return <PublicRoutes />;
 }
 
 function App() {
@@ -157,7 +149,6 @@ function App() {
       <TooltipProvider>
         <MoodProvider>
           <AppContent />
-          
           <Toaster />
         </MoodProvider>
       </TooltipProvider>

@@ -19,7 +19,7 @@ export default function Landing() {
                 <p className="text-xs text-gray-500 dark:text-gray-400">🍎 Powered by Fruitful Assist AI</p>
               </div>
             </div>
-            <Button onClick={() => window.location.href = '/api/login'} size="lg">
+            <Button onClick={() => window.location.href = '/login'} size="lg">
               Sign In
             </Button>
           </div>
@@ -42,7 +42,7 @@ export default function Landing() {
             automated production scheduling, and global distribution management.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button onClick={() => window.location.href = '/api/login'} size="lg" className="text-lg px-8 py-3">
+            <Button onClick={() => window.location.href = '/login'} size="lg" className="text-lg px-8 py-3">
               Get Started
             </Button>
             <Button variant="outline" size="lg" className="text-lg px-8 py-3">

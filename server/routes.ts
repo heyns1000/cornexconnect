@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, auditMiddleware } from "./auth";
 import { achievementService } from "./achievementService";
 import { restoreProducts } from "./restoreProducts";
 import { restoreHardwareStores, getExtractedStoreData, getNormalizedClientData } from "./restoreStores";
@@ -22,8 +22,11 @@ import currenciesRoutes from "./src/routes/currencies";
 import importRoutes from "./src/routes/import";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
+  // Auth middleware (Google, Microsoft, GitHub, Facebook + email/password)
   await setupAuth(app);
+
+  // Audit trail middleware - tracks user API access
+  app.use(auditMiddleware());
 
   // Ecosystem status & health
   app.use("/api/ecosystem", fruitfulPlanetRoutes);
