@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { PricingItem, TierLevel, OrderItem, TransactionRecord } from '../types.ts';
+import { getReorderVelocity } from '../reorderAnalysis.ts';
 
 interface CatalogProps {
   items: PricingItem[];
@@ -25,15 +26,18 @@ export const Catalog: React.FC<CatalogProps> = ({
 }) => {
   const categories = Array.from(new Set(items.map(i => i.category)));
   
+  // Reorder-based velocity: fast movers = most frequently REORDERED SKUs
+  // Opening order is excluded - every SKU gets bought once when stocking up
+  // True demand signal = which SKUs keep getting reordered
+  const reorderStats = React.useMemo(() => getReorderVelocity(history), [history]);
+
   const skuVelocity = React.useMemo(() => {
     const counts: Record<string, number> = {};
-    history.forEach(txn => {
-      txn.items.forEach(item => {
-        counts[item.code] = (counts[item.code] || 0) + item.quantity;
-      });
+    Object.entries(reorderStats).forEach(([code, stats]) => {
+      counts[code] = stats.reorderFreq;
     });
     return counts;
-  }, [history]);
+  }, [reorderStats]);
 
   const maxVolume = Math.max(...(Object.values(skuVelocity) as number[]), 1);
 
@@ -58,7 +62,7 @@ export const Catalog: React.FC<CatalogProps> = ({
     
     let moversFound = false;
     catItems.forEach(item => {
-      const historyExists = skuVelocity[item.code] && skuVelocity[item.code] > 0;
+      const historyExists = reorderStats[item.code]?.isReordered;
       
       if (historyExists) {
         moversFound = true;

@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { INVENTORY_REGISTRY } from '../constants.tsx';
 import { TransactionRecord, TierLevel } from '../types.ts';
+import { getRankedFastMovers } from '../reorderAnalysis.ts';
 
 interface PriorityMarketLeadersProps {
   quantities: Record<string, number>;
@@ -11,7 +12,11 @@ interface PriorityMarketLeadersProps {
 }
 
 export const PriorityMarketLeaders: React.FC<PriorityMarketLeadersProps> = ({ quantities, onQtyChange, history, selectedTier }) => {
-  const leaders = ['CAS04', 'CAS02', 'CAS03']; // Based on screenshot sequence
+  // Dynamic leaders based on reorder frequency, not hardcoded
+  const leaders = useMemo(() => {
+    const ranked = getRankedFastMovers(history);
+    return ranked.slice(0, 3).map(s => s.code);
+  }, [history]);
   
   const handleQuickFill = (code: string) => {
     if (selectedTier === TierLevel.NONE) {

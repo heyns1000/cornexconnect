@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { TransactionRecord, CategoryMetrics } from '../types.ts';
 import { INDUSTRIAL_DATA_ARCHIVE } from '../dataArchive.ts';
+import { splitOpeningVsReorders, getRankedFastMovers } from '../reorderAnalysis.ts';
 
 interface AnalyticsDashboardProps {
   history: TransactionRecord[];
@@ -14,16 +15,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ history,
 
   const metrics = useMemo(() => {
     const totalSpent = history.reduce((sum, txn) => sum + txn.totalValue, 0);
-    const skuStats: Record<string, { freq: number; vol: number; valuation: number }> = {};
     const categoryTotals: Record<string, { spent: number; boxes: number }> = {};
 
     history.forEach(txn => {
       txn.items.forEach(item => {
-        if (!skuStats[item.code]) skuStats[item.code] = { freq: 0, vol: 0, valuation: 0 };
-        skuStats[item.code].freq += 1;
-        skuStats[item.code].vol += item.quantity;
-        skuStats[item.code].valuation += item.value;
-
         const cat = item.item.category;
         if (!categoryTotals[cat]) categoryTotals[cat] = { spent: 0, boxes: 0 };
         categoryTotals[cat].spent += item.value;
@@ -39,15 +34,23 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ history,
       { id: 5, name: "PREMIUM PROFILES (LARGE HIGH-DENSITY)", key: "Premium Profiles (Large High-Density)", yield: 2.9 }
     ];
 
-    const sortedSkuStats = Object.entries(skuStats).sort(([, a], [, b]) => b.freq - a.freq || b.vol - a.vol);
-    const top10 = sortedSkuStats.slice(0, 10);
-    const top5FastMovers = sortedSkuStats.slice(0, 5).map(([code, stats]) => ({
-      code,
-      ...stats,
-      contribution: (stats.valuation / totalSpent) * 100
+    // REORDER-BASED fast movers: ranked by reorder frequency, NOT opening order volume
+    // Opening orders are excluded - a SKU bought once in bulk but never reordered = dead stock
+    // A SKU reordered 8 times even in small qty = true fast mover
+    const rankedMovers = getRankedFastMovers(history);
+    const { opening, reorders } = splitOpeningVsReorders(history);
+    const reorderSpent = reorders.reduce((sum, txn) => sum + txn.totalValue, 0);
+
+    const top10 = rankedMovers.slice(0, 10).map(s => [s.code, { freq: s.reorderFreq, vol: s.reorderVolume, valuation: s.reorderValue }] as const);
+    const top5FastMovers = rankedMovers.slice(0, 5).map(s => ({
+      code: s.code,
+      freq: s.reorderFreq,
+      vol: s.reorderVolume,
+      valuation: s.reorderValue,
+      contribution: reorderSpent > 0 ? (s.reorderValue / reorderSpent) * 100 : 0
     }));
 
-    return { totalSpent, logicGroups, top10, top5FastMovers, categoryTotals };
+    return { totalSpent, logicGroups, top10, top5FastMovers, categoryTotals, openingCount: opening.length, reorderCount: reorders.length };
   }, [history]);
 
   return (
@@ -59,7 +62,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ history,
           </div>
           <div>
             <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">FAA ACTUARY HUB</h1>
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500 italic">18 VERIFIED BUILD SOURCES ACTIVE</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500 italic">{metrics.openingCount} OPENING + {metrics.reorderCount} REORDER GRVs VERIFIED</span>
           </div>
         </div>
 
@@ -77,8 +80,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ history,
            {/* FAST MOVERS ANALYSIS */}
            <div className="bg-[#111] rounded-[40px] p-12 border border-white/5 shadow-2xl relative overflow-hidden">
               <div className="flex items-center justify-between mb-10">
-                 <h3 className="text-3xl font-black italic uppercase tracking-tighter text-white border-b-4 border-emerald-500 pb-2">Fast Movers Analysis</h3>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">Top 5 SKU Contribution</span>
+                 <h3 className="text-3xl font-black italic uppercase tracking-tighter text-white border-b-4 border-emerald-500 pb-2">Reorder Fast Movers</h3>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">Top 5 by Reorder Frequency (Opening Orders Excluded)</span>
               </div>
               <div className="grid gap-6">
                  {metrics.top5FastMovers.map((mover, i) => (
@@ -88,8 +91,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ history,
                           <div>
                              <p className="text-2xl font-black italic uppercase tracking-tighter text-white">{mover.code}</p>
                              <div className="flex gap-4 mt-1">
-                                <span className="text-[9px] font-black text-slate-500 uppercase italic">{mover.freq} Transactions</span>
-                                <span className="text-[9px] font-black text-slate-500 uppercase italic">{mover.vol.toLocaleString()} Boxes Total</span>
+                                <span className="text-[9px] font-black text-slate-500 uppercase italic">{mover.freq} Reorders</span>
+                                <span className="text-[9px] font-black text-slate-500 uppercase italic">{mover.vol.toLocaleString()} Boxes Reordered</span>
                              </div>
                           </div>
                        </div>
@@ -160,8 +163,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ history,
                           <span className="font-black italic text-3xl group-hover:text-blue-500 transition-colors tracking-tighter uppercase">{sku}</span>
                        </div>
                        <div className="text-right">
-                          <span className="text-[9px] font-black text-slate-600 uppercase block mb-1 italic">FREQUENCY</span>
-                          <span className="text-xl font-black text-blue-400 italic">{(stats as any).freq} Orders</span>
+                          <span className="text-[9px] font-black text-slate-600 uppercase block mb-1 italic">REORDER FREQ</span>
+                          <span className="text-xl font-black text-blue-400 italic">{(stats as any).freq} Reorders</span>
                        </div>
                     </div>
                  ))}
@@ -174,7 +177,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ history,
               </div>
               <h4 className="text-3xl font-black italic uppercase tracking-tighter text-white mb-6">ACTUARY NOTE</h4>
               <p className="text-blue-100 text-sm font-black uppercase tracking-widest italic leading-relaxed mb-10">
-                The current R {metrics.totalSpent.toLocaleString(undefined, { maximumFractionDigits: 0 })} manufacturing history demonstrates a strong yield. Fast movers represent over 30% of global inventory churn.
+                R {metrics.totalSpent.toLocaleString(undefined, { maximumFractionDigits: 0 })} total procurement. Fast movers ranked by REORDER frequency — opening orders excluded. SKUs reordered most often = true demand, regardless of value.
               </p>
               <button className="w-full bg-white text-blue-600 py-5 rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl hover:scale-[1.02] transition-all">Export Forensic Report</button>
            </div>
