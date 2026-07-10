@@ -20,7 +20,8 @@ import {
   LogOut,
   Tag,
   Map,
-  Trophy
+  Trophy,
+  Cpu
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { name: "Purchase Orders", href: "/purchase-orders", icon: ShoppingCart },
     { name: "SA Logistics", href: "/logistics", icon: Truck },
     { name: t.factorySetup, href: "/factory-setup", icon: Factory },
+    { name: "CNC Dashboard", href: "/cnc-dashboard", icon: Cpu },
     { name: "Extended Automation", href: "/automation", icon: Settings },
     { name: "Bulk Import", href: "/bulk-import", icon: Upload },
     { name: t.businessIntelligence, href: "/analytics", icon: TrendingUp },
