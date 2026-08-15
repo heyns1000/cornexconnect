@@ -1,0 +1,99 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release'
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run tests
+      run: npm test --if-present
+    
+    - name: Build project
+      run: npm run build
+      env:
+        NODE_ENV: production
+    
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          # CornexConnect Release
+          
+          ## Changelog
+          See git log for detailed changes.
+          
+          ## Installation
+          ```bash
+          npm install cornexconnect@${{ github.ref }}
+          ```
+          
+          ## Docker
+          ```bash
+          docker pull cornexconnect:${{ github.ref }}
+          ```
+        draft: false
+        prerelease: false
+    
+    - name: Publish Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: |
+          heyns1000/cornexconnect:${{ github.ref }}
+          heyns1000/cornexconnect:latest
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+  # Notify about release
+  notify-release:
+    needs: release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Send Slack notification
+      uses: 8398a7/action-slack@v3
+      with:
+        status: 'custom'
+        custom_payload: |
+          {
+            text: `🚀 CornexConnect ${{ github.ref }} released!`,
+            blocks: [
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: `🎉 *CornexConnect ${{ github.ref }} is now live!*\n\n📦 Docker: \`heyns1000/cornexconnect:${{ github.ref }}\`\n📖 Release: ${{ github.server_url }}/${{ github.repository }}/releases/${{ github.ref }}`
+                }
+              }
+            ]
+          }
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+      if: always()
