@@ -5,10 +5,10 @@ const config: CapacitorConfig = {
   appName: 'CornexConnect',
   webDir: 'dist/public',
   server: {
-    // For development - point to local server
-    // url: 'http://localhost:5000',
-    // cleartext: true,
+    // Production: set this to your deployed backend URL
+    // url: 'https://your-production-domain.com',
     androidScheme: 'https',
+    iosScheme: 'https',
   },
   plugins: {
     SplashScreen: {
@@ -16,6 +16,7 @@ const config: CapacitorConfig = {
       backgroundColor: '#10B981',
       showSpinner: true,
       spinnerColor: '#FFFFFF',
+      androidScaleType: 'CENTER_CROP',
     },
     StatusBar: {
       style: 'LIGHT',
@@ -25,11 +26,13 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'automatic',
     scheme: 'CornexConnect',
+    preferredContentMode: 'mobile',
   },
   android: {
     allowMixedContent: false,
     captureInput: true,
     webContentsDebuggingEnabled: false,
+    appendUrlToDeepLink: false,
   },
 };
 

@@ -7,3 +7,18 @@ vite.config.ts.*
 .env
 .env.local
 .local/
+
+# Capacitor native build artifacts
+android/app/build/
+android/.gradle/
+android/build/
+android/local.properties
+android/app/release/
+ios/App/Pods/
+ios/DerivedData/
+ios/build/
+*.jks
+*.keystore
+*.ipa
+*.aab
+*.apk
